@@ -67,3 +67,7 @@ Three-task total ≈ **181.89** (above the 150 floor threshold; ranking per offi
 ## References and acknowledgments
 
 All referenced ideas, third-party tools, pretrained models, and external data sources are listed with links and compliance-audit conclusions in [`reference-links.md`](reference-links.md); the "tools" field of each experiment family also inlines sources (e.g. WOT, official baseline recipes, GSE208162 data). Sources without a concrete URL (e.g. the textbook developmental-program list) are labeled by name and provenance only; no links are fabricated.
+
+## Contact
+
+Feel free to add me on WeChat for detailed discussion: `hui13866591135`
