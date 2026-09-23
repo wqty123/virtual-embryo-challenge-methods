@@ -6,6 +6,8 @@
 > 定位：方法学分享 + 实验记录（符合官方规则 §15：参赛者保留方法所有权，公开方法受鼓励；社区贡献奖欢迎教导类提交）。
 > 所有分数均来自官方评分返回（虚拟胚胎挑战赛公开 leaderboard），不含任何 held-out 阶段数据。
 
+<p align="center"><sub>中文 · <a href="README.en.md">English</a></sub></p>
+
 ## 任务与板块
 
 | 任务 | 板块 | 目标 | 评分指标 |
@@ -34,16 +36,16 @@
 
 | 文件 | 内容 |
 |---|---|
-| `README.md` | 本文件：总览、成绩快照、索引 |
-| `experiments_t1.md` | T1 实验报告（19 个方法族，65 条提交明细） |
-| `experiments_t2_embryo_interp.md` | T2 胚胎插值实验报告（10 个方法族） |
-| `experiments_t2_heart_interp.md` | T2 心脏插值实验报告（6 个方法族） |
-| `experiments_t2_heart_extrap.md` | T2 心脏外推实验报告（14 个方法族） |
-| `experiments_t3.md` | T3 实验报告（15 个方法族，42 条提交明细） |
-| `pitfalls.md` | 所有踩过的坑：方法学/生物学类 + 工程/流程类 |
-| `tools.md` | 自建工具清单：提交卫生/评分校准/方法生成器/申报候选 + 工具覆盖结论 |
-| `reference-links.md` | **参考总账**：官方资源、社区工具、预训练模型、算法方法、外部数据集、平台——全部带链接与合规审计结论 |
-| `gen_experiments.py` | 实验报告生成器（输入：台账 JSON，按方法族分组渲染） |
+| `README.md` / `README.en.md` | 总览、成绩快照、索引（中文 / English） |
+| `experiments_t1.md` / `.en.md` | T1 实验报告（19 个方法族，65 条提交明细） |
+| `experiments_t2_embryo_interp.md` / `.en.md` | T2 胚胎插值实验报告（10 个方法族） |
+| `experiments_t2_heart_interp.md` / `.en.md` | T2 心脏插值实验报告（6 个方法族） |
+| `experiments_t2_heart_extrap.md` / `.en.md` | T2 心脏外推实验报告（14 个方法族） |
+| `experiments_t3.md` / `.en.md` | T3 实验报告（15 个方法族，42 条提交明细） |
+| `pitfalls.md` / `.en.md` | 所有踩过的坑：方法学/生物学类 + 工程/流程类 |
+| `tools.md` / `.en.md` | 自建工具清单：提交卫生/评分校准/方法生成器/申报候选 + 工具覆盖结论 |
+| `reference-links.md` / `.en.md` | **参考总账**：官方资源、社区工具、预训练模型、算法方法、外部数据集、平台——全部带链接与合规审计结论 |
+| `gen_experiments.py` | 实验报告生成器（输入：台账 JSON，按方法族分组渲染，双语输出） |
 
 **每个实验族都按统一结构记录**：技术（具体算法、参数、数据、实现文件）→ 工具（具体脚本/评分器）→ 遇到的问题（具体分数与现象）→ 结论（具体判断）→ 提交明细（全部效果数据）。
 

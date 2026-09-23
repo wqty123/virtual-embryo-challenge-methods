@@ -1,5 +1,7 @@
 # T1 实验报告：单细胞时间外推（E8.5→E9.5 → 预测 E10.5）
 
+<p align="center"><sub>中文 · <a href="experiments_t1.en.md">English</a></sub></p>
+
 评分指标：de_score / de_direction / mmd_u / variogram；总分 ≈ 0.25·de + 0.25·dir + 0.30·mmd + 0.20·vario。官方地板 50（copy_last），实测地板（本队）46.84。每个实验族记录：技术、工具、遇到的问题、结论，族内提交明细为全量效果数据（来自官方评分台账，时间 UTC）。
 
 ## 实验总览（按时间线，具体技术序列）

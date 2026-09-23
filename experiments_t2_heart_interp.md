@@ -1,5 +1,7 @@
 # T2 实验报告：心脏插值（E8.25/E8.75 → 预测中间阶段）
 
+<p align="center"><sub>中文 · <a href="experiments_t2_heart_interp.en.md">English</a></sub></p>
+
 评分指标 8 项（同上）；官方地板 50。面板：500 genes，必须逐元素按官方顺序对齐（曾因缺 Casp4/Pnliprp1 被拒）。
 
 ## 实验总览（按时间线，具体技术序列）

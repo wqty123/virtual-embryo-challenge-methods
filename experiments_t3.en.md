@@ -1,96 +1,96 @@
-# T3 实验报告：Gata4 KO 扰动响应预测（E8.75）
+# T3 experiment report: Gata4 KO perturbation response prediction (E8.75)
 
-<p align="center"><sub>中文 · <a href="experiments_t3.en.md">English</a></sub></p>
+<p align="center"><a href="experiments_t3.md">中文</a> · English</p>
 
-评分指标：de_score / de_direction / severity_slope / mmd_u / variogram；总分 ≈ 0.298·de + 0.250·dir + 0.251·sev + 0.120·mmd + 0.080·vario。官方地板 50（wt_identity），实测地板（本队）45.81。
+Metrics: de_score / de_direction / severity_slope / mmd_u / variogram; total ≈ 0.298·de + 0.250·dir + 0.251·sev + 0.120·mmd + 0.080·vario. Official floor 50 (wt_identity), measured floor (our upload) 45.81.
 
-## 实验总览（按时间线，具体技术序列）
+## Experiment overview (chronological concrete technique sequence)
 
-`transfer 全局Δ` 40.98（证伪：vario 49.8→12.2）→ `wt_identity` 实测地板 45.81 → `cardiac 限制` 44.85（证伪）→ `文献先验（Mab21l2 靶基因）` 45.80（平地板）→ `state 程序` 45.78（零增益）→ `mix 混合 KO`（mix20 61.5 → mix70 64.60）→ `kodir` 43.96 / `koq` 58.04 / `pk/ctl 26 基因` 38.91/43.14（关停）→ `mx50amp` 57.15 → **`cmp celltype^β 重采样`（b070 64.93 → b055 65.31）** → `cmpw 载体稀释` 65.49 → `pw` 64.47 / `prw` 54.49 → **`kb 真实 WT 稀释 KO`（k65 66.36）→ `kbb（k65×b055 组合）` 66.61（当前最佳）**，`kb k75` 65.32（方向错误）
+`transfer global Δ` 40.98 (falsified: vario 49.8→12.2) → `wt_identity` measured floor 45.81 → `cardiac restricted` 44.85 (falsified) → `literature prior (Mab21l2 targets)` 45.80 (ties floor) → `state program` 45.78 (zero gain) → `mix KO mixture` (mix20 61.5 → mix70 64.60) → `kodir` 43.96 / `koq` 58.04 / `pk/ctl 26 genes` 38.91/43.14 (shut down) → `mx50amp` 57.15 → **`cmp celltype^β resampling` (b070 64.93 → b055 65.31)** → `cmpw carrier dilution` 65.49 → `pw` 64.47 / `prw` 54.49 → **`kb real-WT dilution of KO` (k65 66.36) → `kbb (k65×b055 combo)` 66.61 (current best)**, `kb k75` 65.32 (wrong direction)
 
-## 实验记录（按方法族分组）
+## Experiment log (grouped by method family)
 
-### 实验族：transfer（全局 Δ 扰动迁移）
+### Experiment family: transfer (global Δ perturbation transfer)
 
-技术：用 E9.5 WT→Mab21l2 KO 学到的全局响应 Δ（KO − WT 平均表达差）加到 E8.75 载体上（damp 1.0/1.5）。
+Method: add the global response Δ learned from E9.5 WT→Mab21l2 KO (mean KO − WT expression difference) to the E8.75 carrier (damp 1.0/1.5).
 
-工具：baselines/t3_shift_transfer.py、veckit。
+Tools: baselines/t3_shift_transfer.py, veckit.
 
-遇到的问题：damp1.5 真榜 40.98——variogram 49.8→12.2 崩盘；damp1.0 从未成功提交（portal 无此文件）。
+Issues: damp1.5 real board 40.98 — variogram collapses 49.8→12.2; damp1.0 was never successfully submitted (no such file on the portal).
 
-结论：**全局 Δ 毁分布**：KO 响应不能当全局标量平移；transfer 家族关闭。
+Conclusion: **global Δ destroys the distribution**: the KO response cannot be applied as a global scalar shift; the transfer family is closed.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 未提交 | A | transfer@1.0（全局 shift transfer） | 未提交 | — | — | — | — | — | — | portal 提交列表无此文件——从未成功提交；'板分未贴'之谜即此 |
 | 2026-09-04 13:22 | B | transfer@1.5（全局） | 40.98 | 38.8 | 48.4 | 50 | 31.2 | 12.2 | 118/141 | 全局 Δ 推毁分布：vario 49.8→12.2 |
 
-### 实验族：wt_identity（地板探针）
+### Experiment family: wt_identity (floor probe)
 
-技术：直接把 WT 表达复制为预测（E8.75 载体 + WT 分布）。
+Method: copy the WT expression directly as the prediction (E8.75 carrier + WT distribution).
 
-工具：baselines/t3_wt_identity.py（wt_identity 为官方基线定义，https://virtualembryo.ai/challenge/baselines）、veckit。
+Tools: baselines/t3_wt_identity.py (wt_identity is the official baseline definition, https://virtualembryo.ai/challenge/baselines), veckit.
 
-结论：T3 实测地板 = 45.81，官方地板刻度 = 50；一切方法先与此比较。
+Conclusion: T3 measured floor = 45.81, official floor scale = 50; every method is first compared against this.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-04 13:22 | F-dup | wt_identity（与 F 同文件重复上传） | 45.81 | 38.8 | 46.4 | 50 | 50.5 | 49.8 | — | 双传烧掉 1 名额（t3_slot_ledger 已记）；portal 两条 45.8 记录 |
 | 2026-09-04 13:23 | F | wt_identity（地板探针） | 45.81 | 38.8 | 46.4 | 50 | 50.5 | 49.8 | 118/141 | 地板实榜=45.81；已被 mix60_ko 64.51 取代 |
 | 2026-09-16 21:34 | wt-copy7000 | wt_copy_7000（WT 复制 7000 采样；文件名 t3_gata4_wt_copy_7000.h5ad） | 46.76 | 39.2 | 50.6 | 50 | 49.6 | 48.7 | 53/170 | 低于地板；rank 53/170；方法细节待补充 |
 
-### 实验族：cardiac（谱系限制 transfer）
+### Experiment family: cardiac (lineage-restricted transfer)
 
-技术：只对 cardiac 谱系细胞施加全局 Δ（谱系限制版）。
+Method: apply the global Δ only to cardiac-lineage cells (lineage-restricted version).
 
-工具：baselines/t3_shift_transfer.py、veckit。
+Tools: baselines/t3_shift_transfer.py, veckit.
 
-遇到的问题：damp0.5 44.36 / damp0.25 44.85——分布指标保住（mmd 48.8/49.8）但 de 掉到 37.4/37.7（KO 效应打不出来）。
+Issues: damp0.5 44.36 / damp0.25 44.85 — distribution metrics hold (mmd 48.8/49.8) but de drops to 37.4/37.7 (KO effect cannot be expressed).
 
-结论：谱系限制保护了分布、丢了效应；关闭。
+Conclusion: lineage restriction protects the distribution but loses the effect; closed.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-04 14:36 | C | cardiac@0.5（谱系限制 transfer） | 44.36 | 37.4 | 47 | 50 | 48.8 | 37.9 | 119/141 | 批次2 |
 | 2026-09-04 14:36 | D | cardiac@0.25（谱系限制 transfer） | 44.85 | 37.7 | 46.9 | 50 | 49.8 | 41.5 | 119/141 | 批次2 |
 
-### 实验族：Gata4 状态程序（a25/a35/a50）
+### Experiment family: Gata4 state program (a25/a35/a50)
 
-技术：E8.75 载体 10pct + 型内归一化 + Gata4 状态程序（a 系数 0.25/0.35/0.50）。
+Method: E8.75 carrier 10pct + within-type normalization + Gata4 state program (a coefficients 0.25/0.35/0.50).
 
-工具：t3_rewrite 脚本族、veckit。
+Tools: t3_rewrite script family, veckit.
 
-遇到的问题：三个变体 45.78/45.79/45.80，与地板平齐（+0.00）——状态程序没有产生 KO 响应。
+Issues: the three variants score 45.78/45.79/45.80, tied with the floor (+0.00) — the state program produces no KO response.
 
-结论：三连发各占 1 名额零增益；关闭。
+Conclusion: three consecutive uploads each burn a quota with zero gain; closed.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-05 20:55 | state-a25 | Gata4 状态程序 a25（E8.75 载体 10pct，型内归一化） | 45.78 | 38.5 | 46.7 | 50 | 50.7 | 49.8 | 126/149 | t3_rewrite 已上传；与 F 地板平齐（+0.00） |
 | 2026-09-05 20:55 | state-a35 | Gata4 状态程序 a35（同上） | 45.79 | 38.5 | 46.7 | 50 | 50.7 | 49.8 | 126/149 | 同上；三连发之一 |
 | 2026-09-05 20:55 | state-a50 | Gata4 状态程序 a50（同上） | 45.8 | 38.5 | 46.8 | 50 | 50.7 | 49.7 | 126/149 | 同上；三连发各占 1 名额，零增益 |
 
-### 实验族：mix（混合 KO 推断）
+### Experiment family: mix (KO-mixture inference)
 
-技术：把预测构造为"真实 KO 细胞 + WT 载体"的混合——mix 比例 p∈{20,30,40,50,60,70}%（p% KO 细胞 + (100−p)% WT 载体；p 是 KO 细胞比例）；kofeat 变体为 Gata4 靶基因特征清单输入（feat∈{0.05,0.1,0.2,0.35}，实测 amp 越大越差单调下降）；muld_m05 是 mix70 的幅度变体；cardiac/knn 是谱系与最近邻变体。
+Method: construct the prediction as a mixture of "real KO cells + WT carrier" — mix ratio p∈{20,30,40,50,60,70}% (p% KO cells + (100−p)% WT carrier; p is the KO cell fraction); kofeat variants feed a Gata4 target-gene feature list (feat∈{0.05,0.1,0.2,0.35}, measured: larger amplitude monotonically worse); muld_m05 is the mix70 amplitude variant; cardiac/knn are lineage and nearest-neighbor variants.
 
-工具：T3 生成器脚本族（mix 系列）、veckit。
+Tools: T3 generator script family (mix series), veckit.
 
-遇到的问题：① mix40_early 50.09（+0.09）——混早期载体几乎无增益；② cardiac/knn 变体（59.72/61.82）不敌原版 mix40_ko 63.58；③ kofeat 变体 64.06~64.52，feat 越小越接近峰值；④ muld_m05 64.39（sev 92.9 新高但 mmd 50.4 拖累）；⑤ mix70_ko 64.60 族峰值，severity_slope 92.3 当时新高；⑥ mix70_ko 重投一次（同文件再传，64.60 不变）烧名额。
+Issues: ① mix40_early 50.09 (+0.09) — mixing an early carrier gives almost nothing; ② cardiac/knn variants (59.72/61.82) lose to the original mix40_ko 63.58; ③ kofeat variants 64.06–64.52, smaller feat closer to the peak; ④ muld_m05 64.39 (sev 92.9 then-new high but mmd 50.4 drags); ⑤ mix70_ko 64.60 family peak, severity_slope 92.3 then-new high; ⑥ re-uploading mix70_ko (same file, 64.60 unchanged) burned quota.
 
-结论：mix 比例越高 sev 越高（mix70 sev 92.3）；族峰值 64.60。混真实细胞换 mmd 但 sev 上不去——"多混"不是主杠杆。
+Conclusion: higher mix ratio gives higher sev (mix70 sev 92.3); family peak 64.60. Mixing real cells buys mmd but sev cannot climb — "mix more" is not the main lever.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-16 21:34 | mix40-ko | mix40_ko（Gata4 混合 KO 推断；文件名 t3_gata4_mix40_ko.h5ad） | 63.58 | 51.9 | 59.5 | 86.2 | 58.2 | 57.3 | 53/170 | 已被 mix60_ko 64.51 取代（09-17）；仍超地板（+13.58）；rank 53/170；方法细节待补充 |
 | 2026-09-16 21:34 | mix40-early | mix40_early（混合 40% 早期载体；文件名 t3_gata4_mix40_early.h5ad） | 50.09 | 47.1 | 58.4 | 50 | 47.2 | 40.2 | 53/170 | 略超地板（+0.09）；rank 53/170；方法细节待补充 |
@@ -108,176 +108,176 @@
 | 2026-09-18 12:12 | mix70-kofeat035 | mix70_kofeat035（mix70 变体 feat=0.35；文件名 t3_gata4_mix70_kofeat035.h5ad） | 64.06 | 53.3 | 59.3 | 91.7 | 51.1 | 52 | 53/175 | mix70 kofeat 族 feat=0.35；64.06 族内最低；rank 53/175；方法细节待补充 |
 | 2026-09-19 16:01 | mix70_ko-redo | mix70_ko 重投（同文件再传，得分不变） | 64.6 | 53.3 | 59.8 | 92.3 | 52.3 | 53.7 | 53/177 | 重投烧名额，分数与 09-18 一致 |
 
-### 实验族：kodir（KO 方向）
+### Experiment family: kodir (KO direction)
 
-技术：按 KO 方向（a=0.10）构造响应。
+Method: construct the response along the KO direction (a=0.10).
 
-工具：T3 生成器脚本族、veckit。
+Tools: T3 generator script family, veckit.
 
-遇到的问题：43.96 低于地板，variogram 18.1 崩。
+Issues: 43.96 below the floor, variogram 18.1 collapse.
 
-结论：方向构造毁分布；关闭。
+Conclusion: direction construction destroys the distribution; closed.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-17 15:09 | kodir-a10 | kodir_a10（文件名 t3_gata4_kodir_a10.h5ad） | 43.96 | 42.6 | 49.6 | 50 | 40.4 | 18.1 | 50/172 | kodir 族 a10；43.96 低于地板，vario 18.1 崩；方法细节待补充 |
 
-### 实验族：ko2（KO 双路）
+### Experiment family: ko2 (KO dual-path)
 
-技术：KO 响应双路构造，n∈{5000,6000}，b=0.60。
+Method: dual-path KO response construction, n∈{5000,6000}, b=0.60.
 
-工具：T3 生成器脚本族、veckit。
+Tools: T3 generator script family, veckit.
 
-遇到的问题：64.68（n6000）/64.75（n5000），未超 cmp_n6000_b070 的 64.93。
+Issues: 64.68 (n6000) / 64.75 (n5000), not above cmp_n6000_b070 (64.93).
 
-结论：ko2 是 cmp 的前身但未打满 KO 效应；关闭。
+Conclusion: ko2 is cmp's predecessor but does not fully express the KO effect; closed.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-19 18:43 | ko2_n6000_b60 | ko2_n6000_b60（文件名 t3_gata4_ko2_n6000_b60.h5ad） | 64.68 | 54.8 | 60.2 | 97.2 | 43.4 | 46.2 | 53/178 | ko2 变体；未超 cmp_n6000_b070 64.93 |
 | 2026-09-19 18:43 | ko2_n5000_b60 | ko2_n5000_b60（文件名 t3_gata4_ko2_n5000_b60.h5ad） | 64.75 | 55.6 | 59.8 | 97.1 | 43.4 | 45.9 | 53/178 | ko2 变体；未超 cmp_n6000_b070 64.93 |
 
-### 实验族：koq（KO 量化）
+### Experiment family: koq (KO quantized)
 
-技术：KO 响应量化构造（n=5000）。
+Method: quantized KO response construction (n=5000).
 
-工具：T3 生成器脚本族、veckit。
+Tools: T3 generator script family, veckit.
 
-遇到的问题：58.04——mmd 24.8/vario 27.1 双崩。
+Issues: 58.04 — mmd 24.8/vario 27.1 double collapse.
 
-结论：koq 线失败；关闭。
+Conclusion: the koq line fails; closed.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-19 19:04 | koq50_n5000 | koq50_n5000（文件名 t3_gata4_koq50_n5000.h5ad） | 58.04 | 50 | 58.2 | 93.4 | 24.8 | 27.1 | 53/178 | mmd 24.8/vario 27.1 双崩；koq 线失败 |
 
-### 实验族：pk/ctl（26 基因逐基因变换）
+### Experiment family: pk/ctl (26-gene per-gene transforms)
 
-技术：pk26g18（26 个程序基因、g=18 变体）/ ctlp26（对照 26 基因）——对点名基因逐个施加变换、其余不动；属 T3 逐基因变换族（pk/ctlp/koq/kodir/mx50amp 同族，variogram 5/5 崩到 10.8–27.1）。
+Method: pk26g18 (26 program genes, g=18 variant) / ctlp26 (control 26 genes) — apply per-gene transforms to the named genes only, leave the rest untouched; belongs to the T3 per-gene transform family (pk/ctlp/koq/kodir/mx50amp, variogram 5/5 collapse to 10.8–27.1).
 
-工具：T3 生成器脚本族、veckit。
+Tools: T3 generator script family, veckit.
 
-遇到的问题：pk26g18 38.91（mmd 21.4/vario 10.8 双崩）；ctlp26 43.14（mmd 7.9/vario 19.4 双崩）。
+Issues: pk26g18 38.91 (mmd 21.4/vario 10.8 double collapse); ctlp26 43.14 (mmd 7.9/vario 19.4 double collapse).
 
-结论：T3 逐基因变换九条路线无一生还，26 基因程序族关停。
+Conclusion: none of the nine per-gene transform routes on T3 survives; the 26-gene program family is shut down.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-21 02:04 | pk26g18 | pk26g18（文件名 t3_gata4_pk26g18.h5ad） | 38.91 | 37 | 47.5 | 50 | 21.4 | 10.8 | 47/182 | pk26g18 族；38.91 低于官方地板 50 与 cmp_n6000_b070 64.93；severity_slope 50.0 为地板档、mmd 21.4/vario 10.8 双崩；方法细节待补充 |
 | 2026-09-21 02:36 | ctlp26 | ctlp26（文件名 t3_gata4_ctlp26.h5ad） | 43.14 | 49.4 | 53.3 | 50 | 7.9 | 19.4 | 47/182 | ctlp26 族；43.14 高于 pk26g18 38.91，仍低于官方地板 50 与 cmp_n6000_b070 64.93；severity_slope 50.0 为地板档、mmd 7.9/vario 19.4 双崩；26 族确认失败关停 |
 
-### 实验族：mx50amp（50% 混合 + 幅度）
+### Experiment family: mx50amp (50% mixture + amplitude)
 
-技术：50% 混合（mx50）+ 幅度 0.92（amp）构造——在 KO 响应方向上按幅度 0.92 施加变换；属 T3 逐基因/幅度变换族（variogram 5/5 崩到 10.8–27.1）。
+Method: 50% mixture (mx50) + amplitude 0.92 (amp) construction — apply a transform of amplitude 0.92 along the KO-response direction; belongs to the T3 per-gene/amplitude transform family (variogram 5/5 collapse to 10.8–27.1).
 
-工具：tools/_t3_mx50_amp.py、veckit。
+Tools: tools/_t3_mx50_amp.py, veckit.
 
-遇到的问题：57.15——severity_slope 90.6 高但 variogram 15.8 崩。
+Issues: 57.15 — severity_slope 90.6 high but variogram 15.8 collapse.
 
-结论：幅度构造毁 vario；关闭。
+Conclusion: amplitude construction destroys vario; closed.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-21 05:04 | mx50amp092 | mx50amp092（文件名 t3_gata4_mx50amp092.h5ad） | 57.15 | 46 | 55.4 | 90.6 | 46.6 | 15.8 | 47/182 | mx50amp092 族；57.15 超官方地板 50（+7.15）但低于 cmp_n6000_b070 64.93；severity_slope 90.6 高、mmd 46.6 偏弱，vario 15.8 崩；方法细节待补充 |
 
-### 实验族：cmp（celltype^β 重采样）
+### Experiment family: cmp (celltype^β resampling)
 
-技术：cmp = 按细胞类型重采样（celltype^β 指数压平类型分布，β=0.70/0.55/1.00，n=6000；β=1.00 即自然类型比例，β<1 压缩 celltype 分布）。
+Method: cmp = resample by cell type (celltype^β exponential flattening of the type distribution, β=0.70/0.55/1.00, n=6000; β=1.00 is the natural type proportion, β<1 compresses the celltype distribution).
 
-工具：T3 生成器脚本族（cmp 系列）、veckit。
+Tools: T3 generator script family (cmp series), veckit.
 
-遇到的问题：① cmp_n6000_b070 64.93 破 64.6 平台（de 56.3/sev 97.0 大涨，mmd/vario 各降约 10）；② b=1.00 63.35 五项全低于 b070；③ b=0.55 65.31（de 56.3 持平、dir 60.3/sev 97.1 微升、mmd/vario 双升）——β 低侧更优，β 越大越差（斜率 ≈ −5.3 分/单位 β）。
+Issues: ① cmp_n6000_b070 64.93 breaks the 64.6 plateau (de 56.3/sev 97.0 jump, mmd/vario each drop ≈10); ② b=1.00 63.35, all five metrics below b070; ③ b=0.55 65.31 (de 56.3 flat, dir 60.3/sev 97.1 up, mmd/vario both up) — the low-β side is better; larger β is worse (slope ≈ −5.3 points per unit β).
 
-结论：cmp_n6000_b055 = 65.31；**压缩 celltype 分布（β<1）是 T3 的核心收益**。
+Conclusion: cmp_n6000_b055 = 65.31; **compressing the celltype distribution (β<1) is the core T3 gain**.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-19 16:02 | cmp_n6000_b070 | cmp_n6000_b070（新机制 cmp；文件名 t3_gata4_cmp_n6000_b070.h5ad） | 64.93 | 56.3 | 60.1 | 97 | 42.7 | 45.4 | 53/177 | 破 64.6 平台；de 56.3/sev 97.0 大涨，代价 mmd 42.7/vario 45.4 各降 ~10；T3 杠杆点=精准打 KO 效应而非多混真实细胞 |
 | 2026-09-23 16:44 | cmp_n6000_b100 | cmp_n6000_b100（cmp 族 b100 变体；文件名 t3_gata4_cmp_n6000_b100.h5ad，12MB） | 63.35 | 54.1 | 59.2 | 96.8 | 39.4 | 42.7 | 48/186 | cmp 族 b100 变体；63.35 超官方地板（+13.35）但未超 cmp_n6000_b070 64.93（差 1.58）；de 54.1/dir 59.2/sev 96.8/mmd 39.4/vario 42.7 五项全低于 b070（56.3/60.1/97.0/42.7/45.4）；b=100 非甜点，b=70 仍最佳；方法细节待补充 |
 | 2026-09-23 17:02 | cmp_n6000_b055 | cmp_n6000_b055（cmp 族 b055 变体；文件名 t3_gata4_cmp_n6000_b055.h5ad，12MB） | 65.31 | 56.3 | 60.3 | 97.1 | 44.2 | 47.1 | 48/187 | cmp 族 b055 变体；65.31 超 cmp_n6000_b070 64.93 成为新最佳（+0.38）；de 56.3 持平、dir 60.3/sev 97.1 微升、mmd 44.2(+1.5)/vario 47.1(+1.7) 双升——五项全面不输 b070；b 参数低侧更优，b=0.55 新甜点；板人数 186→187；方法细节待补充 |
 
-### 实验族：cmpw（KO 池 + E8.75 WT 载体稀释）
+### Experiment family: cmpw (KO pool + E8.75 WT carrier dilution)
 
-技术：cmpw = cmp_b070 平坦 KO 池加 E8.75 WT 载体稀释——KO 池 70%（β=0.70）+ 载体 30%，k 为载体比例（k=1.00 即 cmp_b070 本身，k50–k85 为稀释序列；n=6000）。
+Method: cmpw = flat KO pool from cmp_b070 diluted with the E8.75 WT carrier — 70% KO pool (β=0.70) + 30% carrier, k = carrier fraction (k=1.00 is cmp_b070 itself, k50–k85 the dilution series; n=6000).
 
-工具：tools/_t3_cmpw_make.py、_t3_cmpw_axes2.py、veckit。
+Tools: tools/_t3_cmpw_make.py, _t3_cmpw_axes2.py, veckit.
 
-遇到的问题：cmpw_n6000_k70 65.49 超 cmp_b055（+0.18）：de 54.8(-1.5)/sev 92.4(-4.7) 让位，mmd 55.2(+11.0)/vario 53.9(+6.8) 暴涨。
+Issues: cmpw_n6000_k70 65.49 beats cmp_b055 (+0.18): de 54.8 (−1.5)/sev 92.4 (−4.7) give way, mmd 55.2 (+11.0)/vario 53.9 (+6.8) jump.
 
-结论：载体稀释赎回分布轴（mmd/vario）但付 sev 代价（≈4.6 分，两条独立路径确认）；cmpw 是过渡，kb 系在此基础上补齐 sev。
+Conclusion: carrier dilution redeems the distribution axes (mmd/vario) but pays a sev cost (≈4.6 points, confirmed on two independent paths); cmpw is transitional, the kb family completes sev on top of it.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-23 17:32 | cmpw_n6000_k70 | cmpw_n6000_k70（cmpw 族 k70 变体；文件名 t3_gata4_cmpw_n6000_k70.h5ad，12MB） | 65.49 | 54.8 | 60.1 | 92.4 | 55.2 | 53.9 | 48/187 | cmpw 族 k70 变体；65.49 超 cmp_n6000_b055 65.31 成为新最佳（+0.18）；换机制：de 54.8(-1.5)/sev 92.4(-4.7) 让位，mmd 55.2(+11.0)/vario 53.9(+6.8) 暴涨——分布保真优先路线（与 pw050 同逻辑但幅度更大）；板人数 187 不变；方法细节待补充 |
 
-### 实验族：pw（prior 加权，证伪）
+### Experiment family: pw (prior weighting, falsified)
 
-技术：pw = prior 加权——在 cmp 基础上按 prior 轴（细胞类型方差轴）做加性加权（p=0.50/1.00，n=6000）；错因：把"加性扰动 dp→dp+Δ"当成"常数缩放 dp→c·dp"（rank 无关性只保护后者），实测 |d(pb)|=0.0414 是加性项。
+Method: pw = prior weighting — additive weighting on cmp along the prior axis (cell-type variance axis) (p=0.50/1.00, n=6000); root cause: treated "additive perturbation dp→dp+Δ" as "constant scaling dp→c·dp" (rank invariance only protects the latter); measured |d(pb)|=0.0414 is the additive term.
 
-工具：T3 生成器脚本族（pw 系列）、veckit。
+Tools: T3 generator script family (pw series), veckit.
 
-遇到的问题：pw050 64.47（mmd/vario 高于 cmp 但 de 54.8/dir 58.1 略低，未超 64.93）；pw100 62.87（de/dir 更低）——β 单调下降 0→0.5→1.0。
+Issues: pw050 64.47 (mmd/vario above cmp but de 54.8/dir 58.1 slightly lower, not above 64.93); pw100 62.87 (de/dir lower) — monotonically decreasing in β 0→0.5→1.0.
 
-结论：prior 加权净负（β 单调递减），证伪；T3 上任何偏离纯 KO 细胞自然分布的操作都削弱 de。
+Conclusion: prior weighting is net-negative (monotone in β), falsified; on T3 any operation that deviates from the natural KO-cell distribution weakens de.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-23 14:07 | pw050 | pw050（文件名 t3_gata4_pw050_n6000.h5ad，12MB） | 64.47 | 54.8 | 58.1 | 97.4 | 44.2 | 48.3 | 48/186 | pw 族 pw050 变体；64.47 超官方地板（+14.47）但未超 cmp_n6000_b070 64.93（差 0.46）；mmd 44.2/vario 48.3 均高于最佳（cmp 42.7/45.4），de 54.8/dir 58.1 略低；板人数 182→186；方法细节待补充 |
 | 2026-09-23 14:07 | pw100 | pw100（文件名 t3_gata4_pw100_n6000.h5ad，12MB） | 62.87 | 52.6 | 56 | 97.7 | 41.7 | 45.7 | 48/186 | pw 族 pw100 变体；62.87 超官方地板（+12.87）但低于 pw050 64.47 与最佳 64.93；de 52.6/dir 56.0 低于 pw050；sev 97.7 为族内新高；方法细节待补充 |
 
-### 实验族：prw（官方 population_reweight + GSE 先验）
+### Experiment family: prw (official population_reweight + GSE prior)
 
-技术：prw = 官方 population_reweight 算子：对 WT 载体做 WT-vs-KO 分类器重采样（该算子原理上无法产生足够强响应）+ GSE 外部先验（s=0.10，1.2MB 小模型；GSE208162 先验与 Mab21l2 响应正交：落入 DE 集 48/267=随机期望）。
+Method: prw = official population_reweight operator: resample the WT carrier with a WT-vs-KO classifier (this operator cannot produce a strong enough response in principle) + GSE external prior (s=0.10, 1.2MB small model; the GSE208162 prior is orthogonal to the Mab21l2 response: 48/267 in the DE set = random expectation).
 
-工具：tools/_gse_cells_make.py、_t3_gse_prior.py、veckit；GSE208162 外部先验数据（https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE208162）。
+Tools: tools/_gse_cells_make.py, _t3_gse_prior.py, veckit; GSE208162 external prior data (https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE208162).
 
-遇到的问题：54.49——severity_slope 70.6 远低于 cmp 的 97.0（KO 效应未打出）；de 44.9/dir 51.3 弱；mmd 53.1/vario 51.9 分布保真做到了。
+Issues: 54.49 — severity_slope 70.6 far below cmp's 97.0 (KO effect not expressed); de 44.9/dir 51.3 weak; mmd 53.1/vario 51.9 distribution fidelity achieved.
 
-结论：分布保住、效应打不出（sev 70.6 vs cmp 97.0）；外部先验方向对齐度不预测分数，关闭。
+Conclusion: distribution preserved but the effect cannot be expressed (sev 70.6 vs cmp 97.0); external prior direction alignment does not predict the score; closed.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-23 16:45 | prw_gse_s010 | prw_gse_s010（prw 族 gse 变体 s=0.10；文件名 t3_gata4_prw_gse_s010.h5ad，1.2MB） | 54.49 | 44.9 | 51.3 | 70.6 | 53.1 | 51.9 | 48/186 | prw 族 gse s010 变体；54.49 超官方地板（+4.49）但远低于最佳 cmp_n6000_b070 64.93（差 10.44）；sev 70.6 远低于 cmp 97.0（KO 效应未打出），de 44.9/dir 51.3 弱；mmd 53.1/vario 51.9 高（分布保真但缺效应）；文件仅 1.2MB 小模型；方法细节待补充 |
 
-### 实验族：kb（真实 WT 稀释 KO，A/B 证伪复核）
+### Experiment family: kb (real WT dilution of KO, A/B falsification re-check)
 
-技术：kb = 真实 WT 细胞稀释 KO（kbgen：平坦 KO 池 + WT 载体稀释，k=65/75 稀释比例，n=6000；kbb 为 kb6000×b055 组合 k=65、b=0.55）；本地轴 A/B 半分割实验曾判其"全面劣于什么都不做、优势是自证"，复核查明该证伪用了两条已证伪的本地轴 + 错误载体配方（kb 载体误用 E9.5 WT，真值载体经 Gata4 均值反解为 E8.75 WT），不构成对真榜分数（66.36/66.61）的反证。
+Method: kb = dilute KO with real WT cells (kbgen: flat KO pool + WT carrier dilution, k=65/75 dilution ratios, n=6000; kbb is the kb6000×b055 combination k=65, b=0.55); a local A/B half-split experiment once judged it "universally worse than doing nothing, the advantage is self-justifying", but the re-check found that falsification used two already-falsified local axes + a wrong carrier recipe (the kb carrier wrongly used E9.5 WT; the true-value carrier is reverse-engineered through Gata4 means as E8.75 WT), so it does not constitute a counter-argument to the real-board scores (66.36/66.61).
 
-工具：tools/_t3_kbgen.py、_t3_kb_ab.py、veckit。
+Tools: tools/_t3_kbgen.py, _t3_kb_ab.py, veckit.
 
-遇到的问题：① kb6000_k65 66.36 超 cmpw（de 56.3/dir 62.2 dir 新高/sev 97.9 sev 新高/mmd 45.0/vario 50.5）；② kbb_n6000_b055_k65 66.61：de/dir 持平、sev 98.0/mmd 46.1/vario 51.8 三涨；③ kb6000_k75 65.32 五项全线下滑（vario -3.0）——k=65 才是最优。
+Issues: ① kb6000_k65 66.36 beats cmpw (de 56.3/dir 62.2 new dir high/sev 97.9 new sev high/mmd 45.0/vario 50.5); ② kbb_n6000_b055_k65 66.61: de/dir flat, sev 98.0/mmd 46.1/vario 51.8 all up; ③ kb6000_k75 65.32, all five metrics down (vario −3.0) — k=65 is optimal.
 
-结论：**kbb_n6000_b055_k65 = 66.61**（rank 48/187），当前 T3 最佳。稀释比例 k=65 + β=0.55 最优；k=75 方向错误。
+Conclusion: **kbb_n6000_b055_k65 = 66.61** (rank 48/187), current T3 best. Dilution ratio k=65 + β=0.55 is optimal; k=75 is the wrong direction.
 
-**提交明细（全部效果，时间 UTC）**
+**Submission log (all results, UTC)**
 
-| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |
+| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-19 19:17 | kb6000_k65 | kb6000_k65（kb 族 k65 变体；文件名 t3_gata4_kb6000_k65.h5ad，12MB） | 66.36 | 56.3 | 62.2 | 97.9 | 45 | 50.5 | 48/187 | kb 族 k65 变体；66.36 超 cmpw_n6000_k70 65.49 成为新最佳（+0.87）；09-19 19:17 已提交但此前漏记（现补录，rank 48/187 为当前板状态）；de 56.3/dir 62.2（dir 新高）/sev 97.9（sev 新高）/mmd 45.0/vario 50.5——de/sev 回 cmp 系高位且 dir/sev 双新高，mmd/vario 介于 cmp 系与 cmpw 系之间；方法细节待补充 |
 | 2026-09-23 17:42 | kbb_n6000_b055_k65 | kbb_n6000_b055_k65（kb6000 与 b055 组合变体；文件名 t3_gata4_kbb_n6000_b055_k65.h5ad，12MB） | 66.61 | 56.3 | 62.2 | 98 | 46.1 | 51.8 | 48/187 | kbb 系（kb6000×b055 组合）；66.61 超 kb6000_k65 66.36 成为新最佳（+0.25）；de 56.3/dir 62.2 持平、sev 98.0（新高）/mmd 46.1(+1.1)/vario 51.8(+1.3) 三涨——kb 系五维全面提升，破 66.36 平台；方法细节待补充 |
 | 2026-09-23 17:43 | kb6000_k75 | kb6000_k75（kb 族 k75 变体；文件名 t3_gata4_kb6000_k75.h5ad，12MB） | 65.32 | 54.8 | 61.3 | 97.5 | 44.9 | 47.5 | 48/187 | kb 族 k75 变体；65.32 未超 kb6000_k65 66.36（五项全线下滑：de -1.5/dir -0.9/sev -0.4/mmd -0.1/vario -3.0）——k=65 仍甜点，k=75 方向错误；方法细节待补充 |
 
-## 汇总行
+## Summary rows
 
-- **当前最佳**：66.61
-- **官方地板行 (copy_last / wt_identity)**：50
-- **实测地板上传（本队）**：45.81
-- **全榜最高（榜首）**：75.2
+- **Current best**: 66.61
+- **Official floor (copy_last / wt_identity)**: 50
+- **Measured floor (our upload)**: 45.81
+- **Board top (leader)**: 75.2

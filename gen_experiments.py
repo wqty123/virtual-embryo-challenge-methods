@@ -218,7 +218,6 @@ T3_FAM = {
     '结论：**全局 Δ 毁分布**：KO 响应不能当全局标量平移；transfer 家族关闭。']),
  'wt': ('wt_identity（地板探针）', [
     '技术：直接把 WT 表达复制为预测（E8.75 载体 + WT 分布）。',
-    '工具：baselines/t3_wt_identity.py、veckit。',
     '工具：baselines/t3_wt_identity.py（wt_identity 为官方基线定义，https://virtualembryo.ai/challenge/baselines）、veckit。',
     '结论：T3 实测地板 = 45.81，官方地板刻度 = 50；一切方法先与此比较。']),
  'cardiac': ('cardiac（谱系限制 transfer）', [
@@ -444,6 +443,349 @@ T2X_FAM = {
     '结论：条件流外推动形态同样死；形态线第四次证伪，extrap 板形态路线全部关闭。']),
 }
 
+# ---------- 英文族段落（与中文族一一对应，机制数据/参数/分数原样保留） ----------
+T1_EN = {
+ 'shift': ('pseudobulk shift (global drift)', [
+    'Method: use E9.5 cells as the carrier and add a per-gene global drift (Δgene = mean_gene(E9.5) − mean_gene(E8.5) × damp), damp∈{0.25,0.5,1.0,1.25,1.5,2.0,2.5}; asymmetric variants use different up/down coefficients (up1.5/dn0.5, up1.5/dn0.75); scattered probe shift@0.5+s0.5 adds Gaussian noise on the drift; shift@2.5 is the damp-knee test. Implementation: baselines/t1_shift.py.',
+    'Tools: baselines/t1_shift.py (recipe follows the official pseudobulk shift baseline, https://virtualembryo.ai/challenge/baselines), local veckit scorer, ledger backfill.',
+    'Issues: ① variogram low across the family (35.7–44.5) — the global shift breaks the gene–gene covariance structure; ② de_score caps at ≈45.3 — a global scalar cannot hit the "named genes"; ③ damp>2.5 gives no gain (S2.5 is the knee); ④ asymmetric variants (up1.5/dn0.5, up1.5/dn0.75) are worse than symmetric; ⑤ scattered probe P4@0.5+s0.5 only 42.29 — noise directly destroys vario (−19) and mmd.',
+    'Conclusion: shift is the strongest simple baseline; family peak shift@2.5 = 48.85 (rank 142/202, de 45.3/dir 56.4/mmd 55.4/vario 34.1), ≈2 points above the measured floor 46.84; but "trade vario for de" reaches its limit here and is superseded by per-type / per-state generators.']),
+ 'otmix': ('OT mixture (WOT coupling + type-transfer resampling)', [
+    'Method: learn a cell coupling matrix with WOT on E8.5→E9.5, resample E9.5 cells by type-transition probability; masked variant A (edge mask 378→61 edges, dropping low-quality coupling edges) — otmixp includes growth factor π (birth–death process), otmixm without growth. Implementation: baselines/t1_otmix.py.',
+    'Tools: baselines/t1_otmix.py, wot_analysis/ (WOT coupling matrix and edge mask, WOT library https://github.com/broadinstitute/wot), veckit.',
+    'Issues: ① otmixp@1.0 variogram collapses to 28.8 (generation amplitude destroys the variance structure); ② OT mixture without the shift skeleton (otmixm) gets de 44.3/mmd 53.6 but is dragged down by vario; ③ damp variant (0.3) 46.75 below the shift family.',
+    'Conclusion: the OT-mixture route fails — type-transfer resampling cannot replace controlled generation at the expression level; family peak otmixp@1.0 = 47.52.']),
+ 'markov': ('Markov flux (time-homogeneous transition rule)', [
+    'Method: treat the transition matrix learned on E8.5→E9.5 as a fixed rule and apply it to the E9.5 carrier to generate the "next stage" (time-homogeneity assumption). The full and non-full versions were submitted on the same day.',
+    'Tools: t1_rewrite script family, veckit.',
+    'Issues: both versions score identically 44.19 (de 38.2/dir 52.2/mmd 46.1/vario 38.8), below the measured floor 46.84; a local proxy once gave an optimistic 0.964 signal, the real board falsified it — the transition rule itself changes over time.',
+    'Conclusion: **the time-homogeneity assumption is falsified**; the Markov flux family is closed. A textbook case of an untrustworthy local proxy.']),
+ 'otprog': ('OT assignment + program mixture (linear combination of programs)', [
+    'Method: OT-assignment coupling plus a linear combination of known "programs" (gene program modules) to generate new cells; ablation variants remove birth (no_birth) and growth (no_growth).',
+    'Tools: t1_rewrite script family, veckit.',
+    'Issues: 45.22 without the shift skeleton, below the measured floor 46.74; removing birth loses 0.67, removing growth loses 0.42 (both weakly positive but the skeleton is too weak); program mixtures can only interpolate inside the convex hull of known programs and cannot generate genuinely new states.',
+    'Conclusion: convex-hull deadlock — "new states" require handling population birth/death; linear program combination is not enough; family peak 45.22, closed.']),
+ 'anonymous': ('shift + anonymous program mixture', [
+    'Method: stack an anonymous program mixture (linear combination of unknown program sources) on the shift@1.0 skeleton.',
+    'Tools: t1_rewrite script family, veckit.',
+    'Issues: de 44.1 reaches the shift@1.25 tier, but variogram collapses to 31.7 and the total 47.34 is below pure shift@1.0 (48.13) — a large mixture amplitude destroys the covariance structure.',
+    'Conclusion: generated content must be small in amplitude, position-controlled and added last; anonymous mixture closed.']),
+ 'mult': ('multiplicative (low-rank multiplicative growth)', [
+    'Method: E9.5 expression × exp(0.25 · rank8 low-rank matrix × masked ancestors), a multiplicative model with a rank-8 low-rank growth factor.',
+    'Tools: t1_rewrite script family, veckit.',
+    'Issues: de 39.6 weaker than the shift family; mmd 51.0/vario 48.1 better than L4, but the total 48.27 still below shift@2.0 (48.74).',
+    'Conclusion: the multiplicative variant does not beat additive shift; low-rank multiplicative growth does not match the real de response; closed.']),
+ 'mpm': ('marker program momentum', [
+    'Method: per-program momentum (r ∝ (s/ś)^+0.5, type-specific rate) on the shift@2.5 skeleton, marker-program version.',
+    'Tools: t1_rewrite script family, veckit.',
+    'Issues: 48.80 ties shift@2.5 (48.85) — de/vario slightly lower, dir/mmd slightly higher; per-program momentum does not beat the global damp.',
+    'Conclusion: per-program momentum does not beat global damp; stage-C probe closed.']),
+ 'mix20e85': ('mix20 + E8.5 carrier mixture', [
+    'Method: a submission mixing 80% E9.5 prediction with 20% original E8.5 cells.',
+    'Tools: veckit, ledger.',
+    'Issues: 46.37 below the measured floor 46.84 and shift@2.5 (48.85).',
+    'Conclusion: mixing in old-stage cells reduces distribution fit; closed.']),
+ 'copylast': ('copy_last (copy previous stage, floor probe)', [
+    'Method: copy the E9.5 expression directly as the prediction (5118-cell sample).',
+    'Tools: veckit, ledger.',
+    'Issues: measured floor 46.84 (09-16 build) is 0.10 above the early L4 probe 46.74; uploading the same file twice burned quota (21:44 and 21:45 identical scores).',
+    'Conclusion: measured floor = 46.84, official floor = 50 (the official scale fixes the floor at 50); copy_last is the zero-information baseline every method must be compared against.']),
+ 'sel': ('sel selection family (selday/selpc1/selanti)', [
+    'Method: generate by "selection" logic — selday (select by developmental day proportion), selpc1 (select by PC1), selanti (anti-selection), proportion f∈{20,30,40,50}%.',
+    'Tools: T1 generator script family, veckit.',
+    'Issues: the whole family collapses — selpc1_f20 30.21 is the lowest score of the whole journey (mmd 15.7/vario 19.6 double collapse); selday only exceeds the floor at f50 (47.02) but still below shift@2.5; selanti_f50 42.66 (mmd 37.2 weak).',
+    'Conclusion: generating by hand-made "selection rules" is the wrong direction; the family is closed.']),
+ 'dir': ('dir24 / dirprop (direction class)', [
+    'Method: resample by 24 direction classes (dir24) or direction proportions (dirprop B family), k∈{2000,3000}.',
+    'Tools: T1 generator script family, veckit.',
+    'Issues: dir24_k2000_s100 and dirprop_B_k2000 are identical metric-by-metric (47.19/44.2/53.1/49.2/40.4), likely the same file renamed and re-uploaded; the k3000 variant has weaker vario 37.8.',
+    'Conclusion: direction-class resampling gets the family-highest de 44.2 but vario 40.4 drags it down; family peak 47.19, does not break the floor; closed.']),
+ 'robust': ('robust_consensus (robust consensus)', [
+    'Method: multi-candidate robust consensus + damp 0.45 drift.',
+    'Tools: T1 generator script family, veckit.',
+    'Issues: 47.94 exceeds the measured floor 46.84 but not shift@2.5 (48.85); de 40.1 weak.',
+    'Conclusion: robust consensus only stabilizes the distribution metrics (mmd 49.8/vario 48.6) and cannot lift de; closed.']),
+ 'ancestor': ('ancestor_donor_birth (ancestor–donor birth mixture)', [
+    'Method: ancestor cells × donor birth mixture (10% mixing ratio).',
+    'Tools: T1 generator script family, veckit.',
+    'Issues: 46.74, marginally below the measured floor 46.84 (−0.10); re-uploading the same file burned one quota (04:35 and 04:46 identical metrics).',
+    'Conclusion: 10% birth mixture gives no gain; closed.']),
+ 'mommask': ('momentum mask', [
+    'Method: on the shift skeleton, use a momentum mask α=0.01 to limit the generation amplitude (drift only applied to genes/cell types with significant momentum).',
+    'Tools: T1 generator script family, veckit.',
+    'Issues: de 43.8/dir 53.6/mmd 50.8 slightly below shift@2.5, but variogram 49.5 jumps +15.4 over shift@2.5 (34.1), total 49.49 beats 48.85 (+0.64).',
+    'Conclusion: T1 first breaks 49. Lesson: **masking the amplitude preserves the variogram structure** — more effective than blindly raising damp.']),
+ 'mm': ('mm (library-size normalization)', [
+    'Method: the mm generator normalizes library size in log1p space so the median library size aligns to 10000 (matching the reference E9.5 base exact 10000); n=1249 sampling, b=0.70.',
+    'Tools: T1 generator script family, veckit.',
+    'Issues: mm_n1249_b070 49.93, only 0.07 from the official floor 50; mmd 52.2/vario 50.7 both pass, de 43.1 still weak.',
+    'Conclusion: library-size normalization is a necessary baseline fix (no effect on de ranking, but preserves the distribution); mm brings the distribution metrics to pass level — 50 is one step away.']),
+ 'covsafe': ('covsafe (covariance safeguarding, deepgen line)', [
+    'Method: on the mm family (library-size-normalized generator) add covariance safeguarding (l=25, the strength parameter protecting gene–gene covariance).',
+    'Tools: deepgen_t1 candidate pipeline, check_submission.py, veckit, real-board backfill.',
+    'Issues: real board 48.09 below the production reference shift@2.5 (48.85, −0.76) — only variogram improves (+16.3) while de/dir/mmd all drop; attribution: local covariance preservation is insufficient and the residual direction is miscalibrated for E10.5.',
+    'Conclusion: **preserving structure cannot replace a correct future-stage transition direction**; covsafe is closed, no l10/l50 variants uploaded.']),
+ 'vs': ('vs (variance amplification)', [
+    'Method: variance amplification — multiply the deviation of the K most-variable genes in the E9.5 carrier by coefficient c and write back (vs200=K200, vs500=K500; c15/c135/c165 = coefficients 1.5/1.35/1.65), touching only covariance, not pseudobulk; vs_kp6_a030_n1249 is vs × knowledge-program kp6 (knowledge shift a=0.30, n=1249); direction check: 3 seeds × 25 groups = 75 points, all positive.',
+    'Tools: tools/_t1_vs_make.py, veckit.',
+    'Issues: vs200_c165 50.52 first breaks the official floor 50 (mmd 55.7, then a new high); vs500_c135 only 50.01 (de 40.9 weak); vs_kp6_a030_n1249 50.67 keeps refreshing.',
+    'Conclusion: the vs family is T1\'s turning point past 50 — variance amplification (moving covariance) is closer to the real developmental variance structure than pure global drift; family peak 50.67.']),
+ 'otf3': ('otf3 (otfix: OT direction + mask + tiny amplitude)', [
+    'Method: otfix — OT-mixture direction + mask + tiny amplitude (n=2500, om2 masked variant; a local independent-truth subset once showed all four axes better).',
+    'Tools: tools/_t1_otf3_robust.py, veckit.',
+    'Issues: 47.09 below the official floor 50 and mm_n1249_b070 (49.93); all four axes worse than the mm family (weighted −2.87 vs actual −2.84) — direct evidence that the T1 local proxy is unusable (locally all four axes looked better).',
+    'Conclusion: the OT-flow variant does not beat the vs family; closed.']),
+ 'statepop': ('state_population_dynamics (state population dynamics)', [
+    'Method: two-component dynamics (implementation in baselines/t1_state_population_dynamics.py module docstring): ① type-level birth/death momentum — estimate momentum from the E8.5→E9.5 composition change and conservatively extrapolate one step, sampling the carrier from the extrapolated population (not by natural E9.5 proportions); ② state dynamics — assign each gene to an expression program (cardiac/endodermal/neural_crest/mesodermal/vascular, five programs), modulate the type velocity by how far each carrier cell\'s state deviates from its type centroid, and give explicit birth-state velocities to new E9.5 types (E9.5 residuals kept in the carrier). Uses only published E8.5/E9.5 data; no hidden-stage input.',
+    'Tools: baselines/t1_state_population_dynamics.py, veckit.',
+    'Issues: 47.93 below the official floor 50; de 43.0 above otf3 but still weak, vario 41.6 weak.',
+    'Conclusion: the dynamics-modeling direction is right but the implementation does not pass the line; closed.']),
+ 'kp': ('kp family (knowledge-program shift + variance amplification / maturity weighting)', [
+    'Method: two mechanisms stacked: A = knowledge-program shift — textbook developmental programs enumerating 10 programs / 271 genes (imprinting/neural/ECM/pluripotency/ribosomal/glycolysis/stress/epithelial etc.; the program list is developmental-biology domain knowledge with no single URL), add a shift to pseudobulk (a∈{0.15,0.25,0.35}; u=uniform / w=weighted by program hits); B = variance amplification — multiply the deviation of the K=500 most-variable genes by c=1.5 (b500c15 means K=500, c=1.5; n=2000 sampling). Variants: kp2/3/4/5 are mechanism-combination indices and ablations (raw=raw input, wo=no weighting, aonly=A only); kp7_m is the maturity-weighting variant (m mechanism + maturity index b=0.50, b=0.00 as control). Key design decision: biological knowledge should be used to "select the program gene set" rather than shift genes one by one.',
+    'Tools: tools/_t1_kp_make.py, _t1_kp_make3.py, check_submission.py, veckit, real-board backfill.',
+    'Issues: ① kp probe kp_a015u only 48.88; ② all raw variants fail (kp5_kw/kp4_so/kp2_raw/kp3_w_raw all 47–48, vario 46.6 collapse); ③ aonly_raw without the b500c15 component drops all three lines (47.37); ④ wo variant 51.91 does not beat the w full pipeline; ⑤ kp7_m_b000 control 51.37, 2.3 below b050 (53.67) (de −4.1/dir −3.2/mmd −1.7) — b=0.50 is the key parameter; ⑥ kp3_w_a025_b500c15_n2000 52.18 once set the T1 best (dir/mmd/vario all pass).',
+    'Conclusion: kp7_m_b050_n2000 = **53.67** (rank 93/254, de 44.2 breaks the 42 bottleneck / dir 57.6 / mmd 57.6 / vario 54.7, four new highs), current T1 best. kp7 maturity weighting was once rejected by a 500-panel OOF, but the 32285-panel real board gives +2.30 — small-panel OOF conclusions do not generalize to the full panel.']),
+ 'e4c': ('E4c pending candidates (lineage Δ / momentum)', [
+    'Method: E4c-lineage Δ (masked-A ancestor mixture, no resampling); E4c-mom type-specific rate r∝(s/ś)^+0.5 (momentum).',
+    'Tools: t1_rewrite script family.',
+    'Issues: not yet regenerated under the label-free format gate; the local profile looks like a copy_last artifact.',
+    'Conclusion: pending state — not uploaded, not scored.']),
+}
+
+T3_EN = {
+ 'transfer': ('transfer (global Δ perturbation transfer)', [
+    'Method: add the global response Δ learned from E9.5 WT→Mab21l2 KO (mean KO − WT expression difference) to the E8.75 carrier (damp 1.0/1.5).',
+    'Tools: baselines/t3_shift_transfer.py, veckit.',
+    'Issues: damp1.5 real board 40.98 — variogram collapses 49.8→12.2; damp1.0 was never successfully submitted (no such file on the portal).',
+    'Conclusion: **global Δ destroys the distribution**: the KO response cannot be applied as a global scalar shift; the transfer family is closed.']),
+ 'wt': ('wt_identity (floor probe)', [
+    'Method: copy the WT expression directly as the prediction (E8.75 carrier + WT distribution).',
+    'Tools: baselines/t3_wt_identity.py (wt_identity is the official baseline definition, https://virtualembryo.ai/challenge/baselines), veckit.',
+    'Conclusion: T3 measured floor = 45.81, official floor scale = 50; every method is first compared against this.']),
+ 'cardiac': ('cardiac (lineage-restricted transfer)', [
+    'Method: apply the global Δ only to cardiac-lineage cells (lineage-restricted version).',
+    'Tools: baselines/t3_shift_transfer.py, veckit.',
+    'Issues: damp0.5 44.36 / damp0.25 44.85 — distribution metrics hold (mmd 48.8/49.8) but de drops to 37.4/37.7 (KO effect cannot be expressed).',
+    'Conclusion: lineage restriction protects the distribution but loses the effect; closed.']),
+ 'state': ('Gata4 state program (a25/a35/a50)', [
+    'Method: E8.75 carrier 10pct + within-type normalization + Gata4 state program (a coefficients 0.25/0.35/0.50).',
+    'Tools: t3_rewrite script family, veckit.',
+    'Issues: the three variants score 45.78/45.79/45.80, tied with the floor (+0.00) — the state program produces no KO response.',
+    'Conclusion: three consecutive uploads each burn a quota with zero gain; closed.']),
+ 'mix': ('mix (KO-mixture inference)', [
+    'Method: construct the prediction as a mixture of "real KO cells + WT carrier" — mix ratio p∈{20,30,40,50,60,70}% (p% KO cells + (100−p)% WT carrier; p is the KO cell fraction); kofeat variants feed a Gata4 target-gene feature list (feat∈{0.05,0.1,0.2,0.35}, measured: larger amplitude monotonically worse); muld_m05 is the mix70 amplitude variant; cardiac/knn are lineage and nearest-neighbor variants.',
+    'Tools: T3 generator script family (mix series), veckit.',
+    'Issues: ① mix40_early 50.09 (+0.09) — mixing an early carrier gives almost nothing; ② cardiac/knn variants (59.72/61.82) lose to the original mix40_ko 63.58; ③ kofeat variants 64.06–64.52, smaller feat closer to the peak; ④ muld_m05 64.39 (sev 92.9 then-new high but mmd 50.4 drags); ⑤ mix70_ko 64.60 family peak, severity_slope 92.3 then-new high; ⑥ re-uploading mix70_ko (same file, 64.60 unchanged) burned quota.',
+    'Conclusion: higher mix ratio gives higher sev (mix70 sev 92.3); family peak 64.60. Mixing real cells buys mmd but sev cannot climb — "mix more" is not the main lever.']),
+ 'kodir': ('kodir (KO direction)', [
+    'Method: construct the response along the KO direction (a=0.10).',
+    'Tools: T3 generator script family, veckit.',
+    'Issues: 43.96 below the floor, variogram 18.1 collapse.',
+    'Conclusion: direction construction destroys the distribution; closed.']),
+ 'ko2': ('ko2 (KO dual-path)', [
+    'Method: dual-path KO response construction, n∈{5000,6000}, b=0.60.',
+    'Tools: T3 generator script family, veckit.',
+    'Issues: 64.68 (n6000) / 64.75 (n5000), not above cmp_n6000_b070 (64.93).',
+    'Conclusion: ko2 is cmp\'s predecessor but does not fully express the KO effect; closed.']),
+ 'koq': ('koq (KO quantized)', [
+    'Method: quantized KO response construction (n=5000).',
+    'Tools: T3 generator script family, veckit.',
+    'Issues: 58.04 — mmd 24.8/vario 27.1 double collapse.',
+    'Conclusion: the koq line fails; closed.']),
+ 'pkctl': ('pk/ctl (26-gene per-gene transforms)', [
+    'Method: pk26g18 (26 program genes, g=18 variant) / ctlp26 (control 26 genes) — apply per-gene transforms to the named genes only, leave the rest untouched; belongs to the T3 per-gene transform family (pk/ctlp/koq/kodir/mx50amp, variogram 5/5 collapse to 10.8–27.1).',
+    'Tools: T3 generator script family, veckit.',
+    'Issues: pk26g18 38.91 (mmd 21.4/vario 10.8 double collapse); ctlp26 43.14 (mmd 7.9/vario 19.4 double collapse).',
+    'Conclusion: none of the nine per-gene transform routes on T3 survives; the 26-gene program family is shut down.']),
+ 'mx50amp': ('mx50amp (50% mixture + amplitude)', [
+    'Method: 50% mixture (mx50) + amplitude 0.92 (amp) construction — apply a transform of amplitude 0.92 along the KO-response direction; belongs to the T3 per-gene/amplitude transform family (variogram 5/5 collapse to 10.8–27.1).',
+    'Tools: tools/_t3_mx50_amp.py, veckit.',
+    'Issues: 57.15 — severity_slope 90.6 high but variogram 15.8 collapse.',
+    'Conclusion: amplitude construction destroys vario; closed.']),
+ 'cmp': ('cmp (celltype^β resampling)', [
+    'Method: cmp = resample by cell type (celltype^β exponential flattening of the type distribution, β=0.70/0.55/1.00, n=6000; β=1.00 is the natural type proportion, β<1 compresses the celltype distribution).',
+    'Tools: T3 generator script family (cmp series), veckit.',
+    'Issues: ① cmp_n6000_b070 64.93 breaks the 64.6 plateau (de 56.3/sev 97.0 jump, mmd/vario each drop ≈10); ② b=1.00 63.35, all five metrics below b070; ③ b=0.55 65.31 (de 56.3 flat, dir 60.3/sev 97.1 up, mmd/vario both up) — the low-β side is better; larger β is worse (slope ≈ −5.3 points per unit β).',
+    'Conclusion: cmp_n6000_b055 = 65.31; **compressing the celltype distribution (β<1) is the core T3 gain**.']),
+ 'cmpw': ('cmpw (KO pool + E8.75 WT carrier dilution)', [
+    'Method: cmpw = flat KO pool from cmp_b070 diluted with the E8.75 WT carrier — 70% KO pool (β=0.70) + 30% carrier, k = carrier fraction (k=1.00 is cmp_b070 itself, k50–k85 the dilution series; n=6000).',
+    'Tools: tools/_t3_cmpw_make.py, _t3_cmpw_axes2.py, veckit.',
+    'Issues: cmpw_n6000_k70 65.49 beats cmp_b055 (+0.18): de 54.8 (−1.5)/sev 92.4 (−4.7) give way, mmd 55.2 (+11.0)/vario 53.9 (+6.8) jump.',
+    'Conclusion: carrier dilution redeems the distribution axes (mmd/vario) but pays a sev cost (≈4.6 points, confirmed on two independent paths); cmpw is transitional, the kb family completes sev on top of it.']),
+ 'pw': ('pw (prior weighting, falsified)', [
+    'Method: pw = prior weighting — additive weighting on cmp along the prior axis (cell-type variance axis) (p=0.50/1.00, n=6000); root cause: treated "additive perturbation dp→dp+Δ" as "constant scaling dp→c·dp" (rank invariance only protects the latter); measured |d(pb)|=0.0414 is the additive term.',
+    'Tools: T3 generator script family (pw series), veckit.',
+    'Issues: pw050 64.47 (mmd/vario above cmp but de 54.8/dir 58.1 slightly lower, not above 64.93); pw100 62.87 (de/dir lower) — monotonically decreasing in β 0→0.5→1.0.',
+    'Conclusion: prior weighting is net-negative (monotone in β), falsified; on T3 any operation that deviates from the natural KO-cell distribution weakens de.']),
+ 'prw': ('prw (official population_reweight + GSE prior)', [
+    'Method: prw = official population_reweight operator: resample the WT carrier with a WT-vs-KO classifier (this operator cannot produce a strong enough response in principle) + GSE external prior (s=0.10, 1.2MB small model; the GSE208162 prior is orthogonal to the Mab21l2 response: 48/267 in the DE set = random expectation).',
+    'Tools: tools/_gse_cells_make.py, _t3_gse_prior.py, veckit; GSE208162 external prior data (https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE208162).',
+    'Issues: 54.49 — severity_slope 70.6 far below cmp\'s 97.0 (KO effect not expressed); de 44.9/dir 51.3 weak; mmd 53.1/vario 51.9 distribution fidelity achieved.',
+    'Conclusion: distribution preserved but the effect cannot be expressed (sev 70.6 vs cmp 97.0); external prior direction alignment does not predict the score; closed.']),
+ 'kb': ('kb (real WT dilution of KO, A/B falsification re-check)', [
+    'Method: kb = dilute KO with real WT cells (kbgen: flat KO pool + WT carrier dilution, k=65/75 dilution ratios, n=6000; kbb is the kb6000×b055 combination k=65, b=0.55); a local A/B half-split experiment once judged it "universally worse than doing nothing, the advantage is self-justifying", but the re-check found that falsification used two already-falsified local axes + a wrong carrier recipe (the kb carrier wrongly used E9.5 WT; the true-value carrier is reverse-engineered through Gata4 means as E8.75 WT), so it does not constitute a counter-argument to the real-board scores (66.36/66.61).',
+    'Tools: tools/_t3_kbgen.py, _t3_kb_ab.py, veckit.',
+    'Issues: ① kb6000_k65 66.36 beats cmpw (de 56.3/dir 62.2 new dir high/sev 97.9 new sev high/mmd 45.0/vario 50.5); ② kbb_n6000_b055_k65 66.61: de/dir flat, sev 98.0/mmd 46.1/vario 51.8 all up; ③ kb6000_k75 65.32, all five metrics down (vario −3.0) — k=65 is optimal.',
+    'Conclusion: **kbb_n6000_b055_k65 = 66.61** (rank 48/187), current T3 best. Dilution ratio k=65 + β=0.55 is optimal; k=75 is the wrong direction.']),
+}
+T2E_EN = {
+ 'v1': ('v1 (single-nearest-neighbor log-linear normalization + paired geometry)', [
+    'Method: train on the E8.0 carrier, learn kNN pairs (k=1) from E7.25→E8.0, apply log-linear normalized interpolation + paired geometry (coordinates translated with the pair) to generate intermediate-stage predictions.',
+    'Tools: t2 generator script family, t2_data_contract.py, veckit.',
+    'Issues: 59.00 (95/152) as the starting baseline; geometric pairing only moves nearest neighbors, poor state continuity.',
+    'Conclusion: v1 is the first T2-embryo version, 59.00 above the floor 50; later families stack different mechanisms on top.']),
+ 'mixbrkt': ('mix_brkt (mixture + bracket)', [
+    'Method: mix real carriers + bracket constraint (only type transitions among E6.75/E7.25/E8.0 allowed), then add paired generation.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 59.07, only 0.07 above v1 — d2_shape 26.3/occupancy_dice 19.0 weak (insufficient coordinate generation); scale 73.0 also drags.',
+    'Conclusion: the bracket constraint keeps de 57.0 but spatial metrics are poor; a transition from v1 to bgm.']),
+ 'bgm': ('bgm (background mixture generation)', [
+    'Method: bgm = overlay "background program mixture" on the carrier to generate intermediate states (the f=0.15 variant controls mixture strength).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: bgm 62.94 beats mix_brkt (+3.87) — dir 70.6/mmd 68.7/vario 67.3 all lead, d2 49.2/occ 41.0 weak; the f0.15 variant 57.97 is even lower.',
+    'Conclusion: bgm is the first 62+ plateau on embryo interp; d2/occ remain the short board.']),
+ 'v1rep': ('v1replica (v1 replica)', [
+    'Method: strict v1 replica (controlled variable).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 56.99, inconsistent with v1\'s 59.00 (different sampling) — a typical case of local vs real-board ranking disagreement.',
+    'Conclusion: the controlled replica confirms the v1 baseline range ≈57–59.']),
+ 'gps': ('gps33 (Gaussian process interpolation)', [
+    'Method: Gaussian process regression interpolation on paired cells (33 gene modules gps33 / n=583 downsampled variant), outputting intermediate-state expression.',
+    'Tools: t2 generator script family (gps series), veckit.',
+    'Issues: gps33 62.37 < bgm 62.94 (d2 55.6 better but scale 88.9 drags); gps33n583 61.36 (de 58.2, the board\'s strongest tier, but overall lower); gps33s 63.19 — same metrics as gps33 except scale 88.9→98.7 (+9.8), total +0.82.',
+    'Conclusion: **scale_log_ratio is a cheap high-score item**: calibrating library size to the reference scale gains 0.8+ points for free; gps33s = 63.19.']),
+ 'tls': ('tls2n5000 (type-level global shift)', [
+    'Method: type-level global shift — shift expression uniformly within each cell type (n=5000); the real board shows nh +7.8 success but d2 −31.8/occ −27.9 cancel it out.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 59.01 — d2_shape 23.8/occupancy_dice 17.6 collapse (type-level shift destroys inter-type relative positions); once mistakenly uploaded to the T1 panel and rejected (32285 vs 498).',
+    'Conclusion: type-level global shift destroys spatial metrics; closed.']),
+ 'gpsnnu': ('gpsnnu (geometric inheritance + nearest-neighbor uniquification)', [
+    'Method: gps-family nnu variant — switch the expression source: geometric inheritance + nearest-neighbor uniquification (drop the constrained pairing, inherit expression from geometric nearest neighbors); the local nh proxy once hit 62.4 precisely, the real board shows mmd −7.0/vario −13.4 eating the gain.',
+    'Tools: tools/_t2_gpsnn.py, _t2_gpsnn_u.py, veckit.',
+    'Issues: 61.81 < gps33s 63.19 — d2 55.6 same tier as gps33s but de 53.5/mmd 61.6/vario 53.4 weaker.',
+    'Conclusion: the unconstrained version loses gps\'s distribution advantage; closed.']),
+ 'cpf': ('cpf015r5k (homologous pairing + positional interpolation)', [
+    'Method: cpf = homologous-pair construction: homologous pairing + positional interpolation pos_f=0.15 + scale correction (r variant anchor 200.88; n=5000 sampling, the 5k version resampled under the 583–5000 cell cap after cpf015r was rejected for exceeding it; local prediction +2.4~2.5).',
+    'Tools: tools/_cpf005_probe.py, check_submission.py, veckit.',
+    'Issues: the original cpf015r at 9000 cells was rejected for exceeding the board cap; cpf015r5k 65.31 — de 55.8/dir 70.6/mmd 68.8/vario 67.1/d2 56.1 all lead, occ 43.4 slightly weak.',
+    'Conclusion: **cpf015r5k = 65.31** (65/200), current T2-embryo-interp best. d2_shape/occupancy_dice are the main remaining improvement room.']),
+ 'vlk8': ('vlK8 (variance amplification K=8)', [
+    'Method: vlK8 = variance-amplification variant (amplify the K=8 highest-variance genes by coefficient c=1.25); highly isomorphic with cpf015r5k, the only variable is variance amplification — on T1 this lever is worth +3.5 (3 real-board points), on T2 it is negative (the gain is halved or worse while nh cost is paid in full).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 64.75 — highly isomorphic with cpf015r5k (dir/mmd/vario/d2/occ/scale almost identical), the gap is de 55.2 (−0.6)/mmd 67.1 (−1.7)/nh 63.4 (−0.9).',
+    'Conclusion: vlK8c125 64.75 is cpf\'s near-relative plateau, not above 65.31; variance amplification does not transfer to T2; closed.']),
+ 'vg': ('vg_ourmixs (v1 paired displacement-field transplant)', [
+    'Method: vg_ourmixs = change the geometry: transplant v1\'s paired displacement field onto the mixture expression; nh collapses 57.8→41.5 (weighted −4.10).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 55.93 — scale 98.7 strong but d2 52.8/occ 48.2/nh 41.5 weak, below bgm 62.94.',
+    'Conclusion: geometric transplant destroys nh; closed.']),
+}
+
+T2H_EN = {
+ 'v1': ('v1 (type stratification + global pairing)', [
+    'Method: stratify by cell type, within-type global pairing interpolation from E8.25→E8.75 (log-linear normalization + paired geometry).',
+    'Tools: t2 generator script family, t2_data_contract.py, veckit.',
+    'Issues: 61.86 (74/148) — heart-interp first version baseline; the 500 vs 498 gene-panel trap (rejected once for missing Casp4/Pnliprp1).',
+    'Conclusion: v1 is the heart-interp starting point 61.9; the panel must be element-wise aligned to the official 500 genes.']),
+ 'mixbrkt': ('mix_brkt / mix_brkts (mixture + bracket + scale)', [
+    'Method: mix real carriers (E8.25/E8.75) + bracket type constraint + paired generation; mix_brkts additionally calibrates library-size scale (scale_log_ratio 71.1→100.0 full marks).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: mix_brkt 62.6 and mix_brkts are identical metric-by-metric except scale (de 52.1/dir 55.7/mmd 50.7/vario 34.7/d2 42.2/occ 54.4/nh 50.8); full-mark scale contributes ≈ +2.4.',
+    'Conclusion: **mix_brkts = 65.01** (54/191), current heart-interp best; scale_log_ratio from 71.1 to 100.0 full marks lifts the total by ≈ +2.4.']),
+ 'gps50': ('gps50n1185 (Gaussian process)', [
+    'Method: Gaussian process interpolation (n=1185).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 50.2, tied with the floor — the gps variant on heart interp is clearly weaker than on the embryo board.',
+    'Conclusion: gps is unsuitable for heart interp; closed.']),
+ 'v1g2000': ('v1g2000s (hand-replicated v1 geometry)', [
+    'Method: v1g = hand-replicated v1 geometry (replica of v1\'s paired displacement field, n=2000); the replication is incomplete — d2 only 48.7 (v1 original 88.1).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 60.0 — the geometric-constraint variant is below v1 (61.9) and mix_brkts (65.01); d2 48.7 far below v1\'s 88.1.',
+    'Conclusion: v1-geometry replication is incomplete (the v1 original is no longer available locally); closed.']),
+ 'v1geom': ('v1geom5000s (v1 geometry variant)', [
+    'Method: v1 geometry variant (n=5000; the v1 original is no longer local, coordinates actually come from another coordinate set of v1replicas); the real-board d2 46.2 proves v1\'s geometry is not preserved in any local file.',
+    'Tools: tools/_t2hi_v1geo.py, veckit.',
+    'Issues: 53.12 — vario 37.6 collapse (geometric transformation breaks the expression distribution); scale 100.0 full marks.',
+    'Conclusion: large geometric sampling amplitude destroys vario; the whole v1 line is closed.']),
+ 'v1vc': ('v1vc100 (v1 + variance control, proxy-extrapolation falsification)', [
+    'Method: v1 + variance control (vc=100, coordinates from v1replicas rather than the v1 original); mistake A: the local nh proxy reading 0.00852 falls outside the four-point calibration interval [0.04217, 0.13902], the reported "62.04" was a linear extrapolation of the left segment (measured 50.8, error +11.24); mistake B: cited a real-board d2=88.1 analogy from the v1 original that does not exist locally (measured 42.2, 46 points off).',
+    'Tools: tools/_heart_vc_sweep.py, veckit.',
+    'Issues: 53.61 — vario 34.7 weak; d2 42.2 (−38.3, largest single-axis loss); net −11.40 vs mix_brkts 65.01.',
+    'Conclusion: **a proxy reading must first fall inside the calibration interval**; the whole v1 line is closed (v1vc100/v1geom5000s/v1g2000s/gps50n1185).']),
+}
+T2X_EN = {
+ 'v1': ('v1 early candidate', [
+    'Method: early candidate (09-04 first version, no version suffix).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: starts at 46.4, below the floor 50.',
+    'Conclusion: extrap-board starting point; explored step by step.']),
+ 'v3': ('v3 (shrinkage type trend + uniform carrier + coordinate amplification)', [
+    'Method: confidence-shrinkage type trend damp0.75 + uniform E9.5 carrier + coordinates ×1.31.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 48.71 (mmd 33.6 largest loss, scale 100 full marks); the same file was double-uploaded on 09-06 and re-uploaded a third time on 09-14 (historical record — never upload again).',
+    'Conclusion: coordinate amplification + shrinkage trend is the wrong direction; the v3 family is closed.']),
+ 'v4': ('v4 population_growth (population growth projection)', [
+    'Method: E9.5 carrier + population-growth amplitude projection.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 49.26 — d2_shape 30.6 largest loss; de 52.8 the family\'s highest, scale 100 full marks, but the total still below the floor 50.',
+    'Conclusion: population-growth projection fails to move morphology; v4 closed.']),
+ 'v2ga6': ('v2ga6 (geometric amplitude)', [
+    'Method: v2 geometric amplitude a=6.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 53.6, close to the floor but does not break it.',
+    'Conclusion: geometric amplitude does not break 50; closed.']),
+ 'v4a10': ('v4a10 (growth amplitude 10)', [
+    'Method: population-growth amplitude 10.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 50.1, marginally above the floor.',
+    'Conclusion: growth-amplitude tuning gains almost nothing; closed.']),
+ 'r6': ('r6b70a20 (morphology extrapolation)', [
+    'Method: morphology extrapolation r6 (b=0.70, a=0.20 morphology/geometry amplitudes).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 38.97 — morphology extrapolation is heavily penalized.',
+    'Conclusion: changing morphology is heavily penalized (38.97, d2 11.9 collapse) — the first morphology-line falsification point on the extrap board.']),
+ 'compc100': ('comp_c100 (composition + morphology)', [
+    'Method: composition mixture + morphology transform (c=100).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 32.8 — the lowest score of the whole journey, the worst morphology-line falsification point.',
+    'Conclusion: morphology transforms are irreversible; closed.']),
+ 'vmorph': ('vmorph_s120 (virtual morphology)', [
+    'Method: virtual morphology transform s=120.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 46.8 — geometric metrics such as d2 are penalized.',
+    'Conclusion: the virtual-morphology route fails; closed.']),
+ 'scaleonly': ('scale_only (scale adjustment only)', [
+    'Method: adjust only library size/composition toward the extrapolation-target-stage proportions, coordinates and morphology completely untouched (scale_log_ratio calibrated to 100 full marks).',
+    'Tools: t2 generator script family (scale series), veckit.',
+    'Issues: 54.51, current extrap best (68/185) — scale full marks 100, balanced metrics (de 46.8/dir 49.8/mmd 50.5/vario 50.1/d2 49.9/occ 54.1/nh 51.1).',
+    'Conclusion: **moving only scale/composition, not morphology**, is the only correct route on the extrap board.']),
+ 'mix20scale': ('mix20_scale (mixture + scale)', [
+    'Method: 20% mixture + scale calibration.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 53.9, below scale_only 54.51.',
+    'Conclusion: mixing adds no points; closed.']),
+ 'compw30': ('compw30_scale (composition weighting + scale)', [
+    'Method: 30% composition weighting + scale.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 53.7, below scale_only.',
+    'Conclusion: composition weighting adds no points; closed.']),
+ 'w005': ('w005 (minimal displacement 0.05 along the scale_only end)', [
+    'Method: w005 = minimal displacement along the scale_only end (displacement amplitude 0.05): move only a tiny amount of coordinate displacement, keep the de/dir-end advantage, leave a little room for distribution improvement (alternatives w010 = displacement 0.10, wk20/wk50 = move only 20–50 genes for distribution fine-tuning).',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 54.43 (rank 72/204) — de 46.8/dir 49.8/mmd 50.5/vario 50.1/d2 49.9/occ 54.1/scale 100/nh 51.1, a balanced runner-up, only 0.08 from scale_only 54.51.',
+    'Conclusion: the balanced variant is close to scale_only but does not beat it; w005 = 54.43, second highest.']),
+ 'selday': ('selday (selection day, closed)', [
+    'Method: selday family — select cells by developmental day (selday30/50_scale), apply 30%/50% day selection to the E9.5 carrier then scale-adjust only.',
+    'Tools: t2 generator script family, veckit.',
+    'Issues: 27.54 / 28.9 — the lowest scores of the whole journey (mmd/vario/d2/occ all collapse); day selection destroys the E9.5 cell composition.',
+    'Conclusion: day selection is useless for extrap; formally closed.']),
+ 'cpfx': ('cpfx (type-level displacement shift extrapolation)', [
+    'Method: cpfx = cpf-family extrapolation variant: expression unchanged, coordinates displaced at the type level (n=8000, a=0.10); d2_distance normalizes and compares pairwise distance distributions — rigid scaling does not change shape, translation changes inter-type relative positions — d2 collapses to 5.7.',
+    'Tools: tools/_heart_extrap_cpfx.py, veckit.',
+    'Issues: 52.12 — d2_shape 5.7 collapse (morphology extrapolation heavily penalized); occupancy_dice 42.0.',
+    'Conclusion: conditional-flow extrapolation moving morphology dies the same way; the fourth morphology-line falsification — all morphology routes on the extrap board are closed.']),
+}
+
 # ---------- 汇总行 ----------
 SUMM = {
  'T1_val': [('当前最佳','53.67'),('官方地板行 (copy_last / wt_identity)','50'),('实测地板上传（本队）','46.84'),('全榜最高（榜首）','68.7')],
@@ -452,13 +794,47 @@ SUMM = {
  'T2_heart_extrap': [('当前最佳','54.51'),('官方地板行 (copy_last / wt_identity)','50'),('全榜最高（榜首）','60.5')],
  'T3_gata4': [('当前最佳','66.61'),('官方地板行 (copy_last / wt_identity)','50'),('实测地板上传（本队）','45.81'),('全榜最高（榜首）','75.2')],
 }
+SUMM_EN = {
+ 'T1_val': [('Current best','53.67'),('Official floor (copy_last / wt_identity)','50'),('Measured floor (our upload)','46.84'),('Board top (leader)','68.7')],
+ 'T2_embryo_interp': [('Current best','65.31'),('Official floor (copy_last / wt_identity)','50'),('Board top (leader)','75.6')],
+ 'T2_heart_interp': [('Current best','65.01'),('Official floor (copy_last / wt_identity)','50'),('Board top (leader)','73.4')],
+ 'T2_heart_extrap': [('Current best','54.51'),('Official floor (copy_last / wt_identity)','50'),('Board top (leader)','60.5')],
+ 'T3_gata4': [('Current best','66.61'),('Official floor (copy_last / wt_identity)','50'),('Measured floor (our upload)','45.81'),('Board top (leader)','75.2')],
+}
+L10N = {
+ 'zh': {
+   'overview': '## 实验总览（按时间线，具体技术序列）', 'records': '## 实验记录（按方法族分组）',
+   'family': '### 实验族：', 'other': '### 实验族：其他（未归类提交，保持完整记录）',
+   'detail': '**提交明细（全部效果，时间 UTC）**', 'summary': '## 汇总行',
+   'hdr_t1': '| 日期 | 版本 | 方法（文件） | 总分 | de | dir | mmd | vario | rank | 备注 |',
+   'hdr_t2': '| 日期 | 版本 | 方法（文件） | 总分 | de | dir | mmd | vario | d2 | occ | scale | nh | rank | 备注 |',
+   'hdr_t3': '| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |',
+   'sep_t1': '|---|---|---|---|---|---|---|---|---|---|',
+   'sep_t2': '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
+   'sep_t3': '|---|---|---|---|---|---|---|---|---|---|---|',
+ },
+ 'en': {
+   'overview': '## Experiment overview (chronological concrete technique sequence)', 'records': '## Experiment log (grouped by method family)',
+   'family': '### Experiment family: ', 'other': '### Experiment family: other (unclassified submissions, full record kept)',
+   'detail': '**Submission log (all results, UTC)**', 'summary': '## Summary rows',
+   'hdr_t1': '| Date | Version | Method (file) | Total | de | dir | mmd | vario | rank | Notes |',
+   'hdr_t2': '| Date | Version | Method (file) | Total | de | dir | mmd | vario | d2 | occ | scale | nh | rank | Notes |',
+   'hdr_t3': '| Date | Version | Method (file) | Total | de | dir | sev | mmd | vario | rank | Notes |',
+   'sep_t1': '|---|---|---|---|---|---|---|---|---|---|',
+   'sep_t2': '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
+   'sep_t3': '|---|---|---|---|---|---|---|---|---|---|---|',
+ },
+}
 # 汇总行也放进族输出
-def build_summary_lines(sheet):
-    return ['- **%s**：%s' % (k, v) for k, v in SUMM.get(sheet, [])]
+def build_summary_lines(sheet, lang):
+    s = SUMM if lang == 'zh' else SUMM_EN
+    return ['- **%s**：%s' % (k, v) for k, v in s.get(sheet, [])] if lang == 'zh' else ['- **%s**: %s' % (k, v) for k, v in s.get(sheet, [])]
 
-def render(sheet, fam, title, intro, overview):
+def render(sheet, fam, fam_en, title, intro, overview, lang='zh', base_zh='', base_en=''):
+    l = L10N[lang]
     rows = d[sheet]
-    out = ['# ' + title, '', intro, '', '## 实验总览（按时间线，具体技术序列）', '', overview, '', '## 实验记录（按方法族分组）', '']
+    switcher = ('<p align="center"><sub>中文 · <a href="%s">English</a></sub></p>' % base_en) if lang == 'zh' else ('<p align="center"><a href="%s">中文</a> · English</p>' % base_zh)
+    out = ['# ' + title, '', switcher, '', intro, '', l['overview'], '', overview, '', l['records'], '']
     # 按族顺序输出
     order = list(fam.keys())
     grouped = {}
@@ -468,7 +844,6 @@ def render(sheet, fam, title, intro, overview):
         method = str(r[2]).strip()
         if method.startswith(('当前最佳','官方地板','实测地板','全榜最高','与官方地板差','与榜首差','待传')):
             continue
-        # 汇总行：日期列带标签、方法列为空
         if str(r[0]).strip() in ('当前最佳','官方地板行 (copy_last / wt_identity)','实测地板上传（本队）','全榜最高（榜首）','与官方地板差','与榜首差'):
             continue
         f = family_of(sheet, r)
@@ -476,80 +851,98 @@ def render(sheet, fam, title, intro, overview):
     for f in order:
         if f not in grouped:
             continue
-        name, paras = fam[f]
-        out.append('### 实验族：' + name)
+        name, paras = (fam_en[f] if lang == 'en' else fam[f])
+        out.append(l['family'] + name)
         out.append('')
         for p in paras:
             out.append(p)
             out.append('')
-        # 提交明细
-        out.append('**提交明细（全部效果，时间 UTC）**')
+        out.append(l['detail'])
         out.append('')
         if sheet == 'T1_val':
-            out.append('| 日期 | 版本 | 方法（文件） | 总分 | de | dir | mmd | vario | rank | 备注 |')
-            out.append('|---|---|---|---|---|---|---|---|---|---|')
+            out.append(l['hdr_t1'])
+            out.append(l['sep_t1'])
             for r in grouped[f]:
                 out.append('| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (
                     mark(r[0]), esc(r[1]), esc(r[2]), mark(r[3]), mark(r[4]), mark(r[5]), mark(r[6]), mark(r[7]), mark(r[8]) if len(r)>8 else '—', esc(r[9]) if len(r)>9 else ''))
         elif sheet in ('T2_embryo_interp','T2_heart_interp','T2_heart_extrap'):
-            out.append('| 日期 | 版本 | 方法（文件） | 总分 | de | dir | mmd | vario | d2 | occ | scale | nh | rank | 备注 |')
-            out.append('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|')
+            out.append(l['hdr_t2'])
+            out.append(l['sep_t2'])
             for r in grouped[f]:
                 out.append('| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (
                     mark(r[0]), esc(r[1]), esc(r[2]), mark(r[3]), mark(r[4]), mark(r[5]), mark(r[6]), mark(r[7]), mark(r[8]), mark(r[9]), mark(r[10]), mark(r[11]), mark(r[12]) if len(r)>12 else '—', esc(r[13]) if len(r)>13 else ''))
         elif sheet == 'T3_gata4':
-            out.append('| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |')
-            out.append('|---|---|---|---|---|---|---|---|---|---|---|')
+            out.append(l['hdr_t3'])
+            out.append(l['sep_t3'])
             for r in grouped[f]:
                 out.append('| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (
                     mark(r[0]), esc(r[1]), esc(r[2]), mark(r[3]), mark(r[4]), mark(r[5]), mark(r[6]), mark(r[7]), mark(r[8]), mark(r[9]) if len(r)>9 else '—', esc(r[10]) if len(r)>10 else ''))
         out.append('')
     # 兜底：未归类的提交不丢
     if 'other' in grouped:
-        out.append('### 实验族：其他（未归类提交，保持完整记录）')
+        out.append(l['other'])
         out.append('')
-        out.append('**提交明细（全部效果，时间 UTC）**')
+        out.append(l['detail'])
         out.append('')
         if sheet == 'T1_val':
-            out.append('| 日期 | 版本 | 方法（文件） | 总分 | de | dir | mmd | vario | rank | 备注 |')
-            out.append('|---|---|---|---|---|---|---|---|---|---|')
+            out.append(l['hdr_t1'])
+            out.append(l['sep_t1'])
             for r in grouped['other']:
                 out.append('| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (
                     mark(r[0]), esc(r[1]), esc(r[2]), mark(r[3]), mark(r[4]), mark(r[5]), mark(r[6]), mark(r[7]), mark(r[8]) if len(r)>8 else '—', esc(r[9]) if len(r)>9 else ''))
         elif sheet in ('T2_embryo_interp','T2_heart_interp','T2_heart_extrap'):
-            out.append('| 日期 | 版本 | 方法（文件） | 总分 | de | dir | mmd | vario | d2 | occ | scale | nh | rank | 备注 |')
-            out.append('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|')
+            out.append(l['hdr_t2'])
+            out.append(l['sep_t2'])
             for r in grouped['other']:
                 out.append('| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (
                     mark(r[0]), esc(r[1]), esc(r[2]), mark(r[3]), mark(r[4]), mark(r[5]), mark(r[6]), mark(r[7]), mark(r[8]), mark(r[9]), mark(r[10]), mark(r[11]), mark(r[12]) if len(r)>12 else '—', esc(r[13]) if len(r)>13 else ''))
         elif sheet == 'T3_gata4':
-            out.append('| 日期 | 版本 | 方法（文件） | 总分 | de | dir | sev | mmd | vario | rank | 备注 |')
-            out.append('|---|---|---|---|---|---|---|---|---|---|---|')
+            out.append(l['hdr_t3'])
+            out.append(l['sep_t3'])
             for r in grouped['other']:
                 out.append('| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |' % (
                     mark(r[0]), esc(r[1]), esc(r[2]), mark(r[3]), mark(r[4]), mark(r[5]), mark(r[6]), mark(r[7]), mark(r[8]), mark(r[9]) if len(r)>9 else '—', esc(r[10]) if len(r)>10 else ''))
         out.append('')
-    out.append('## 汇总行')
+    out.append(l['summary'])
     out.append('')
-    out.extend(build_summary_lines(sheet))
+    out.extend(build_summary_lines(sheet, lang))
     out.append('')
     return '\n'.join(out)
 
 jobs = [
-    ('T1_val', T1_FAM, 'T1 实验报告：单细胞时间外推（E8.5→E9.5 → 预测 E10.5）', '评分指标：de_score / de_direction / mmd_u / variogram；总分 ≈ 0.25·de + 0.25·dir + 0.30·mmd + 0.20·vario。官方地板 50（copy_last），实测地板（本队）46.84。每个实验族记录：技术、工具、遇到的问题、结论，族内提交明细为全量效果数据（来自官方评分台账，时间 UTC）。',
-     '`pseudobulk shift（全局漂移）` 48.13 → damp 网格 shift@2.5 48.85 → `OT 混合` 47.52 → `Markov 通量` 44.19（证伪）→ `程序混合` 47.34（vario 31.7 崩）→ `multiplicative` 48.27 → `marker 动量` 48.80 → `copy_last` 实测地板 46.84 → `sel 族` 30.21~47.02（全崩）→ `dir24/dirprop` 47.19 → `momentum mask` 49.49 → `mm 库大小归一化` 49.93 → `covsafe` 48.09（证伪）→ `vs 方差放大` 50.67 → **`kp 知识程序位移+方差放大/成熟度加权`：kp3_w_a025 52.18 → kp7_m_b050 53.67（当前最佳）**'),
-    ('T2_embryo_interp', T2E_FAM, 'T2 实验报告：胚胎插值（E6.75/E7.25/E8.0 → 预测中间阶段）', '评分指标 8 项：de_score / de_direction / mmd_u / variogram / d2_shape / occupancy_dice / scale_log_ratio / neighborhood_mmd；官方地板 50。面板：498 genes（官方发布面板，非目标文件基因集）。',
-     '`v1（kNN 配对 log-linear 归一化 + 配对几何）` 59.0 → `mix_brkt` 59.07（d2/occ 弱）→ `bgm` 62.94 → `v1replica` 56.99（控制变量）→ `gps33 高斯过程` 62.37 → `gps33s（scale 校准）` 63.19 → `tls2n5000 类型级整体平移` 59.01（d2 23.8 崩）→ `gpsnnu 几何继承` 61.81 → `vg_ourmixs 几何移植` 55.93 → **`cpf015r5k 同源配对` 65.31（当前最佳）** → `vlK8 方差放大` 64.75（未超）'),
-    ('T2_heart_interp', T2H_FAM, 'T2 实验报告：心脏插值（E8.25/E8.75 → 预测中间阶段）', '评分指标 8 项（同上）；官方地板 50。面板：500 genes，必须逐元素按官方顺序对齐（曾因缺 Casp4/Pnliprp1 被拒）。',
-     '`v1（类型分层 + 全局配对）` 61.9 → `mix_brkt` 62.6 → **`mix_brkts（scale_log_ratio 71.1→100.0 满档）` 65.01（当前最佳）**；`gps50n1185` 50.2（无效）、`v1g2000s` 60.0、`v1geom5000s` 53.12（vario 37.6 崩）、`v1vc100` 53.61 均未超'),
-    ('T2_heart_extrap', T2X_FAM, 'T2 实验报告：心脏外推（预测 E9.5 之后）', '评分指标 8 项（同上）；官方地板 50。铁律：**只动 scale/构成、不动形态**。',
-     '`v1 早期候选` 46.4 → `v3（置信收缩+坐标×1.31）` 48.71 → `v4 population_growth` 49.26 → `v2ga6` 53.59 / `v4a10` 50.08（微过地板）→ **形态线四次证伪**：`r6b70a20` 38.97 / `comp_c100` 32.8 / `vmorph_s120` 46.8 / `cpfx 类型级位移平移`（d2_shape 5.7）52.12 → **`scale_only` 54.51（当前最佳）**，`w005（位移 0.05）` 54.43、`mix20_scale` 53.9、`compw30_scale` 53.7 次之；`selday30/50` 27.5/28.9（全旅程最低，关闭）'),
-    ('T3_gata4', T3_FAM, 'T3 实验报告：Gata4 KO 扰动响应预测（E8.75）', '评分指标：de_score / de_direction / severity_slope / mmd_u / variogram；总分 ≈ 0.298·de + 0.250·dir + 0.251·sev + 0.120·mmd + 0.080·vario。官方地板 50（wt_identity），实测地板（本队）45.81。',
-     '`transfer 全局Δ` 40.98（证伪：vario 49.8→12.2）→ `wt_identity` 实测地板 45.81 → `cardiac 限制` 44.85（证伪）→ `文献先验（Mab21l2 靶基因）` 45.80（平地板）→ `state 程序` 45.78（零增益）→ `mix 混合 KO`（mix20 61.5 → mix70 64.60）→ `kodir` 43.96 / `koq` 58.04 / `pk/ctl 26 基因` 38.91/43.14（关停）→ `mx50amp` 57.15 → **`cmp celltype^β 重采样`（b070 64.93 → b055 65.31）** → `cmpw 载体稀释` 65.49 → `pw` 64.47 / `prw` 54.49 → **`kb 真实 WT 稀释 KO`（k65 66.36）→ `kbb（k65×b055 组合）` 66.61（当前最佳）**，`kb k75` 65.32（方向错误）'),
+    ('T1_val', T1_FAM, T1_EN, 'T1 实验报告：单细胞时间外推（E8.5→E9.5 → 预测 E10.5）', 'T1 experiment report: single-cell temporal extrapolation (E8.5→E9.5 → predict E10.5)',
+     '评分指标：de_score / de_direction / mmd_u / variogram；总分 ≈ 0.25·de + 0.25·dir + 0.30·mmd + 0.20·vario。官方地板 50（copy_last），实测地板（本队）46.84。每个实验族记录：技术、工具、遇到的问题、结论，族内提交明细为全量效果数据（来自官方评分台账，时间 UTC）。',
+     'Metrics: de_score / de_direction / mmd_u / variogram; total ≈ 0.25·de + 0.25·dir + 0.30·mmd + 0.20·vario. Official floor 50 (copy_last), measured floor (our upload) 46.84. Each family records: method, tools, issues, conclusion; the in-family submission log is the full result data (from the official scoring ledger, UTC).',
+     '`pseudobulk shift（全局漂移）` 48.13 → damp 网格 shift@2.5 48.85 → `OT 混合` 47.52 → `Markov 通量` 44.19（证伪）→ `程序混合` 47.34（vario 31.7 崩）→ `multiplicative` 48.27 → `marker 动量` 48.80 → `copy_last` 实测地板 46.84 → `sel 族` 30.21~47.02（全崩）→ `dir24/dirprop` 47.19 → `momentum mask` 49.49 → `mm 库大小归一化` 49.93 → `covsafe` 48.09（证伪）→ `vs 方差放大` 50.67 → **`kp 知识程序位移+方差放大/成熟度加权`：kp3_w_a025 52.18 → kp7_m_b050 53.67（当前最佳）**',
+     '`pseudobulk shift (global drift)` 48.13 → damp grid shift@2.5 48.85 → `OT mixture` 47.52 → `Markov flux` 44.19 (falsified) → `program mixture` 47.34 (vario 31.7 collapse) → `multiplicative` 48.27 → `marker momentum` 48.80 → `copy_last` measured floor 46.84 → `sel family` 30.21~47.02 (all collapse) → `dir24/dirprop` 47.19 → `momentum mask` 49.49 → `mm library-size normalization` 49.93 → `covsafe` 48.09 (falsified) → `vs variance amplification` 50.67 → **`kp knowledge-program shift + variance amplification / maturity weighting`: kp3_w_a025 52.18 → kp7_m_b050 53.67 (current best)**'),
+    ('T2_embryo_interp', T2E_FAM, T2E_EN, 'T2 实验报告：胚胎插值（E6.75/E7.25/E8.0 → 预测中间阶段）', 'T2 experiment report: embryo interpolation (E6.75/E7.25/E8.0 → predict intermediate stage)',
+     '评分指标 8 项：de_score / de_direction / mmd_u / variogram / d2_shape / occupancy_dice / scale_log_ratio / neighborhood_mmd；官方地板 50。面板：498 genes（官方发布面板，非目标文件基因集）。',
+     'Eight metrics: de_score / de_direction / mmd_u / variogram / d2_shape / occupancy_dice / scale_log_ratio / neighborhood_mmd; official floor 50. Panel: 498 genes (the official published panel, not the target-file gene set).',
+     '`v1（kNN 配对 log-linear 归一化 + 配对几何）` 59.0 → `mix_brkt` 59.07（d2/occ 弱）→ `bgm` 62.94 → `v1replica` 56.99（控制变量）→ `gps33 高斯过程` 62.37 → `gps33s（scale 校准）` 63.19 → `tls2n5000 类型级整体平移` 59.01（d2 23.8 崩）→ `gpsnnu 几何继承` 61.81 → `vg_ourmixs 几何移植` 55.93 → **`cpf015r5k 同源配对` 65.31（当前最佳）** → `vlK8 方差放大` 64.75（未超）',
+     '`v1 (kNN-pair log-linear normalization + paired geometry)` 59.0 → `mix_brkt` 59.07 (d2/occ weak) → `bgm` 62.94 → `v1replica` 56.99 (controlled variable) → `gps33 Gaussian process` 62.37 → `gps33s (scale calibration)` 63.19 → `tls2n5000 type-level global shift` 59.01 (d2 23.8 collapse) → `gpsnnu geometric inheritance` 61.81 → `vg_ourmixs geometry transplant` 55.93 → **`cpf015r5k homologous pairing` 65.31 (current best)** → `vlK8 variance amplification` 64.75 (not above)'),
+    ('T2_heart_interp', T2H_FAM, T2H_EN, 'T2 实验报告：心脏插值（E8.25/E8.75 → 预测中间阶段）', 'T2 experiment report: heart interpolation (E8.25/E8.75 → predict intermediate stage)',
+     '评分指标 8 项（同上）；官方地板 50。面板：500 genes，必须逐元素按官方顺序对齐（曾因缺 Casp4/Pnliprp1 被拒）。',
+     'Eight metrics (same as above); official floor 50. Panel: 500 genes, must be element-wise aligned to the official order (once rejected for missing Casp4/Pnliprp1).',
+     '`v1（类型分层 + 全局配对）` 61.9 → `mix_brkt` 62.6 → **`mix_brkts（scale_log_ratio 71.1→100.0 满档）` 65.01（当前最佳）**；`gps50n1185` 50.2（无效）、`v1g2000s` 60.0、`v1geom5000s` 53.12（vario 37.6 崩）、`v1vc100` 53.61 均未超',
+     '`v1 (type stratification + global pairing)` 61.9 → `mix_brkt` 62.6 → **`mix_brkts (scale_log_ratio 71.1→100.0 full marks)` 65.01 (current best)**; `gps50n1185` 50.2 (ineffective), `v1g2000s` 60.0, `v1geom5000s` 53.12 (vario 37.6 collapse), `v1vc100` 53.61 — none above'),
+    ('T2_heart_extrap', T2X_FAM, T2X_EN, 'T2 实验报告：心脏外推（预测 E9.5 之后）', 'T2 experiment report: heart extrapolation (predict after E9.5)',
+     '评分指标 8 项（同上）；官方地板 50。铁律：**只动 scale/构成、不动形态**。',
+     'Eight metrics (same as above); official floor 50. Iron rule: **move only scale/composition, never morphology**.',
+     '`v1 早期候选` 46.4 → `v3（置信收缩+坐标×1.31）` 48.71 → `v4 population_growth` 49.26 → `v2ga6` 53.59 / `v4a10` 50.08（微过地板）→ **形态线四次证伪**：`r6b70a20` 38.97 / `comp_c100` 32.8 / `vmorph_s120` 46.8 / `cpfx 类型级位移平移`（d2_shape 5.7）52.12 → **`scale_only` 54.51（当前最佳）**，`w005（位移 0.05）` 54.43、`mix20_scale` 53.9、`compw30_scale` 53.7 次之；`selday30/50` 27.5/28.9（全旅程最低，关闭）',
+     '`v1 early candidate` 46.4 → `v3 (shrinkage + coordinates ×1.31)` 48.71 → `v4 population_growth` 49.26 → `v2ga6` 53.59 / `v4a10` 50.08 (marginally above floor) → **morphology-line falsified four times**: `r6b70a20` 38.97 / `comp_c100` 32.8 / `vmorph_s120` 46.8 / `cpfx type-level displacement shift` (d2_shape 5.7) 52.12 → **`scale_only` 54.51 (current best)**, then `w005 (displacement 0.05)` 54.43, `mix20_scale` 53.9, `compw30_scale` 53.7; `selday30/50` 27.5/28.9 (journey-lowest, closed)'),
+    ('T3_gata4', T3_FAM, T3_EN, 'T3 实验报告：Gata4 KO 扰动响应预测（E8.75）', 'T3 experiment report: Gata4 KO perturbation response prediction (E8.75)',
+     '评分指标：de_score / de_direction / severity_slope / mmd_u / variogram；总分 ≈ 0.298·de + 0.250·dir + 0.251·sev + 0.120·mmd + 0.080·vario。官方地板 50（wt_identity），实测地板（本队）45.81。',
+     'Metrics: de_score / de_direction / severity_slope / mmd_u / variogram; total ≈ 0.298·de + 0.250·dir + 0.251·sev + 0.120·mmd + 0.080·vario. Official floor 50 (wt_identity), measured floor (our upload) 45.81.',
+     '`transfer 全局Δ` 40.98（证伪：vario 49.8→12.2）→ `wt_identity` 实测地板 45.81 → `cardiac 限制` 44.85（证伪）→ `文献先验（Mab21l2 靶基因）` 45.80（平地板）→ `state 程序` 45.78（零增益）→ `mix 混合 KO`（mix20 61.5 → mix70 64.60）→ `kodir` 43.96 / `koq` 58.04 / `pk/ctl 26 基因` 38.91/43.14（关停）→ `mx50amp` 57.15 → **`cmp celltype^β 重采样`（b070 64.93 → b055 65.31）** → `cmpw 载体稀释` 65.49 → `pw` 64.47 / `prw` 54.49 → **`kb 真实 WT 稀释 KO`（k65 66.36）→ `kbb（k65×b055 组合）` 66.61（当前最佳）**，`kb k75` 65.32（方向错误）',
+     '`transfer global Δ` 40.98 (falsified: vario 49.8→12.2) → `wt_identity` measured floor 45.81 → `cardiac restricted` 44.85 (falsified) → `literature prior (Mab21l2 targets)` 45.80 (ties floor) → `state program` 45.78 (zero gain) → `mix KO mixture` (mix20 61.5 → mix70 64.60) → `kodir` 43.96 / `koq` 58.04 / `pk/ctl 26 genes` 38.91/43.14 (shut down) → `mx50amp` 57.15 → **`cmp celltype^β resampling` (b070 64.93 → b055 65.31)** → `cmpw carrier dilution` 65.49 → `pw` 64.47 / `prw` 54.49 → **`kb real-WT dilution of KO` (k65 66.36) → `kbb (k65×b055 combo)` 66.61 (current best)**, `kb k75` 65.32 (wrong direction)'),
 ]
-for sheet, fam, title, intro, overview in jobs:
-    md = render(sheet, fam, title, intro, overview)
-    fname = {'T1_val':'experiments_t1.md','T2_embryo_interp':'experiments_t2_embryo_interp.md','T2_heart_interp':'experiments_t2_heart_interp.md','T2_heart_extrap':'experiments_t2_heart_extrap.md','T3_gata4':'experiments_t3.md'}[sheet]
-    open(OUT + '\\' + fname, 'w', encoding='utf-8').write(md)
-    print('written', fname)
+fname_map = {'T1_val':'experiments_t1.md','T2_embryo_interp':'experiments_t2_embryo_interp.md','T2_heart_interp':'experiments_t2_heart_interp.md','T2_heart_extrap':'experiments_t2_heart_extrap.md','T3_gata4':'experiments_t3.md'}
+for sheet, fam, fam_en, t_zh, t_en, i_zh, i_en, o_zh, o_en in jobs:
+    base = fname_map[sheet]
+    base_en = base.replace('.md', '.en.md')
+    md_zh = render(sheet, fam, fam_en, t_zh, i_zh, o_zh, 'zh', base, base_en)
+    md_en = render(sheet, fam, fam_en, t_en, i_en, o_en, 'en', base, base_en)
+    open(OUT + '\\' + base, 'w', encoding='utf-8').write(md_zh)
+    open(OUT + '\\' + base_en, 'w', encoding='utf-8').write(md_en)
+    print('written', base, '+ .en.md')
 print('done')

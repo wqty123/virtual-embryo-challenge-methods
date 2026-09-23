@@ -1,5 +1,7 @@
 # T2 实验报告：心脏外推（预测 E9.5 之后）
 
+<p align="center"><sub>中文 · <a href="experiments_t2_heart_extrap.en.md">English</a></sub></p>
+
 评分指标 8 项（同上）；官方地板 50。铁律：**只动 scale/构成、不动形态**。
 
 ## 实验总览（按时间线，具体技术序列）

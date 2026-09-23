@@ -1,5 +1,7 @@
 # T2 实验报告：胚胎插值（E6.75/E7.25/E8.0 → 预测中间阶段）
 
+<p align="center"><sub>中文 · <a href="experiments_t2_embryo_interp.en.md">English</a></sub></p>
+
 评分指标 8 项：de_score / de_direction / mmd_u / variogram / d2_shape / occupancy_dice / scale_log_ratio / neighborhood_mmd；官方地板 50。面板：498 genes（官方发布面板，非目标文件基因集）。
 
 ## 实验总览（按时间线，具体技术序列）
