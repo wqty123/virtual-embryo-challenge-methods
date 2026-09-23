@@ -35,11 +35,11 @@
 | 文件 | 内容 |
 |---|---|
 | `README.md` | 本文件：总览、成绩快照、索引 |
-| `experiments_t1.md` | T1 实验报告（18 个方法族，71 条提交明细） |
+| `experiments_t1.md` | T1 实验报告（19 个方法族，65 条提交明细） |
 | `experiments_t2_embryo_interp.md` | T2 胚胎插值实验报告（10 个方法族） |
 | `experiments_t2_heart_interp.md` | T2 心脏插值实验报告（6 个方法族） |
-| `experiments_t2_heart_extrap.md` | T2 心脏外推实验报告（12 个方法族） |
-| `experiments_t3.md` | T3 实验报告（15 个方法族，48 条提交明细） |
+| `experiments_t2_heart_extrap.md` | T2 心脏外推实验报告（14 个方法族） |
+| `experiments_t3.md` | T3 实验报告（15 个方法族，42 条提交明细） |
 | `pitfalls.md` | 所有踩过的坑：方法学/生物学类 + 工程/流程类 |
 | `tools.md` | 用过的全部工具：自建管线 + 社区工具 |
 | `gen_experiments.py` | 实验报告生成器（输入：台账 JSON，按方法族分组渲染） |
