@@ -80,7 +80,7 @@
 
 ### 实验族：mix（混合 KO 推断）
 
-技术：把预测构造为"真实 KO 细胞 + WT 载体"的混合——mix 比例 p∈{20,30,40,50,60,70}%（p% KO 细胞 + (100−p)% WT 载体；p 是 KO 细胞比例）；kofeat 变体为 Gata4 靶基因特征清单输入（feat∈{0.05,0.1,0.2,0.35}，实测 amp 越大越差单调下降）；muld_m05 是 mix70 的幅度变体；cardiac/knn 是谱系与最近邻变体。机制见 FALSIFIED_2026-09-21 与 T3_CARRIER_DILUTION_2026-09-24。
+技术：把预测构造为"真实 KO 细胞 + WT 载体"的混合——mix 比例 p∈{20,30,40,50,60,70}%（p% KO 细胞 + (100−p)% WT 载体；p 是 KO 细胞比例）；kofeat 变体为 Gata4 靶基因特征清单输入（feat∈{0.05,0.1,0.2,0.35}，实测 amp 越大越差单调下降）；muld_m05 是 mix70 的幅度变体；cardiac/knn 是谱系与最近邻变体。
 
 工具：T3 生成器脚本族（mix 系列）、veckit。
 
@@ -159,7 +159,7 @@
 
 ### 实验族：pk/ctl（26 基因逐基因变换）
 
-技术：pk26g18（26 个程序基因、g=18 变体）/ ctlp26（对照 26 基因）——对点名基因逐个施加变换、其余不动；属 T3 逐基因变换族（pk/ctlp/koq/kodir/mx50amp 同族，variogram 5/5 崩到 10.8–27.1）。机制见 JUDGE_METHOD_2026-09-21 / T3_CARRIER_DILUTION_2026-09-24。
+技术：pk26g18（26 个程序基因、g=18 变体）/ ctlp26（对照 26 基因）——对点名基因逐个施加变换、其余不动；属 T3 逐基因变换族（pk/ctlp/koq/kodir/mx50amp 同族，variogram 5/5 崩到 10.8–27.1）。
 
 工具：T3 生成器脚本族、veckit。
 
@@ -176,7 +176,7 @@
 
 ### 实验族：mx50amp（50% 混合 + 幅度）
 
-技术：50% 混合（mx50）+ 幅度 0.92（amp）构造——在 KO 响应方向上按幅度 0.92 施加变换；属 T3 逐基因/幅度变换族（variogram 5/5 崩到 10.8–27.1）。机制见 tools/_t3_mx50_amp.py 与 T3_CARRIER_DILUTION_2026-09-24。
+技术：50% 混合（mx50）+ 幅度 0.92（amp）构造——在 KO 响应方向上按幅度 0.92 施加变换；属 T3 逐基因/幅度变换族（variogram 5/5 崩到 10.8–27.1）。
 
 工具：tools/_t3_mx50_amp.py、veckit。
 
@@ -192,7 +192,7 @@
 
 ### 实验族：cmp（celltype^β 重采样）
 
-技术：cmp = 按细胞类型重采样（celltype^β 指数压平类型分布，β=0.70/0.55/1.00，n=6000；β=1.00 即自然类型比例，β<1 压缩 celltype 分布）。机制见 T3_PW_POSTMORTEM_2026-09-23（"cmp 的 celltype^0.7 重采样是 KO 对齐的最优解"）与 T3_CARRIER_DILUTION_2026-09-24。
+技术：cmp = 按细胞类型重采样（celltype^β 指数压平类型分布，β=0.70/0.55/1.00，n=6000；β=1.00 即自然类型比例，β<1 压缩 celltype 分布）。
 
 工具：T3 生成器脚本族（cmp 系列）、veckit。
 
@@ -210,7 +210,7 @@
 
 ### 实验族：cmpw（KO 池 + E8.75 WT 载体稀释）
 
-技术：cmpw = cmp_b070 平坦 KO 池加 E8.75 WT 载体稀释——KO 池 70%（β=0.70）+ 载体 30%，k 为载体比例（k=1.00 即 cmp_b070 本身，k50–k85 为稀释序列；n=6000）。机制见 T3_CARRIER_DILUTION_2026-09-24 与 tools/_t3_cmpw_make.py。
+技术：cmpw = cmp_b070 平坦 KO 池加 E8.75 WT 载体稀释——KO 池 70%（β=0.70）+ 载体 30%，k 为载体比例（k=1.00 即 cmp_b070 本身，k50–k85 为稀释序列；n=6000）。
 
 工具：tools/_t3_cmpw_make.py、_t3_cmpw_axes2.py、veckit。
 
@@ -226,7 +226,7 @@
 
 ### 实验族：pw（prior 加权，证伪）
 
-技术：pw = prior 加权——在 cmp 基础上按 prior 轴（细胞类型方差轴）做加性加权（p=0.50/1.00，n=6000）；错因：把"加性扰动 dp→dp+Δ"当成"常数缩放 dp→c·dp"（rank 无关性只保护后者），实测 |d(pb)|=0.0414 是加性项。机制见 T3_PW_POSTMORTEM_2026-09-23。
+技术：pw = prior 加权——在 cmp 基础上按 prior 轴（细胞类型方差轴）做加性加权（p=0.50/1.00，n=6000）；错因：把"加性扰动 dp→dp+Δ"当成"常数缩放 dp→c·dp"（rank 无关性只保护后者），实测 |d(pb)|=0.0414 是加性项。
 
 工具：T3 生成器脚本族（pw 系列）、veckit。
 
@@ -243,7 +243,7 @@
 
 ### 实验族：prw（官方 population_reweight + GSE 先验）
 
-技术：prw = 官方 population_reweight 算子：对 WT 载体做 WT-vs-KO 分类器重采样（该算子原理上无法产生足够强响应）+ GSE 外部先验（s=0.10，1.2MB 小模型；GSE208162 先验与 Mab21l2 响应正交：落入 DE 集 48/267=随机期望）。机制见 ROUND8_CONCLUSIONS_2026-09-24（"官方 population_reweight 的失败方式：分布保住、效应打不出"）。
+技术：prw = 官方 population_reweight 算子：对 WT 载体做 WT-vs-KO 分类器重采样（该算子原理上无法产生足够强响应）+ GSE 外部先验（s=0.10，1.2MB 小模型；GSE208162 先验与 Mab21l2 响应正交：落入 DE 集 48/267=随机期望）。
 
 工具：tools/_gse_cells_make.py、_t3_gse_prior.py、veckit。
 
@@ -259,7 +259,7 @@
 
 ### 实验族：kb（真实 WT 稀释 KO，A/B 证伪复核）
 
-技术：kb = 真实 WT 细胞稀释 KO（kbgen：平坦 KO 池 + WT 载体稀释，k=65/75 稀释比例，n=6000；kbb 为 kb6000×b055 组合 k=65、b=0.55）；09-21 本地轴 A/B 半分割实验曾判其"全面劣于什么都不做、优势是自证"，09-24 复核查明该证伪用了两条已证伪的本地轴 + 错误载体配方（kb 载体误用 E9.5 WT，真值载体经 Gata4 均值反解为 E8.75 WT），不构成对真榜分数（66.36/66.61）的反证。机制见 FALSIFIED_2026-09-21 / T3_CARRIER_DILUTION_2026-09-24 与 tools/_t3_kbgen.py。
+技术：kb = 真实 WT 细胞稀释 KO（kbgen：平坦 KO 池 + WT 载体稀释，k=65/75 稀释比例，n=6000；kbb 为 kb6000×b055 组合 k=65、b=0.55）；本地轴 A/B 半分割实验曾判其"全面劣于什么都不做、优势是自证"，复核查明该证伪用了两条已证伪的本地轴 + 错误载体配方（kb 载体误用 E9.5 WT，真值载体经 Gata4 均值反解为 E8.75 WT），不构成对真榜分数（66.36/66.61）的反证。
 
 工具：tools/_t3_kbgen.py、_t3_kb_ab.py、veckit。
 
