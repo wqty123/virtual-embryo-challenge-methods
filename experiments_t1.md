@@ -12,7 +12,7 @@
 
 技术：以 E9.5 细胞为载体，逐基因加全局漂移量（Δgene = mean_gene(E9.5) − mean_gene(E8.5) × damp），damp∈{0.25,0.5,1.0,1.25,1.5,2.0,2.5}；非对称变体上/下幅度取不同系数（up1.5/dn0.5、up1.5/dn0.75）；弥散探针 shift@0.5+s0.5 在漂移上叠加高斯噪声；shift@2.5 是 damp 拐点测试。实现：baselines/t1_shift.py。
 
-工具：baselines/t1_shift.py、veckit 本地计分器、台账回填。
+工具：baselines/t1_shift.py（配方参考官方基线 pseudobulk shift，https://virtualembryo.ai/challenge/baselines）、veckit 本地计分器、台账回填。
 
 遇到的问题：① variogram 全族偏低（35.7~44.5），全局平移破坏基因-基因协方差结构；② de_score 封顶 ≈45.3，全局标量猜不中"被点名的基因"；③ damp>2.5 无增益（S2.5 是拐点）；④ 非对称变体（up1.5/dn0.5、up1.5/dn0.75）比对称更差；⑤ 弥散探针 P4@0.5+s0.5 只有 42.29，噪声直接毁 vario(-19) 和 mmd。
 
@@ -39,7 +39,7 @@
 
 技术：用 WOT 在 E8.5→E9.5 上学细胞耦合矩阵，按类型转移概率重采样生成 E9.5 细胞；掩膜A（边掩膜 378→61 条边，去低质量耦合边）变体 otmixp 含生长因子π（出生-死亡过程），otmixm 无生长。实现：baselines/t1_otmix.py。
 
-工具：baselines/t1_otmix.py、wot_analysis/（WOT 耦合矩阵与边掩膜）、veckit。
+工具：baselines/t1_otmix.py、wot_analysis/（WOT 耦合矩阵与边掩膜，WOT 库 https://github.com/broadinstitute/wot）、veckit。
 
 遇到的问题：① otmixp@1.0 的 variogram 崩到 28.8（生成幅度毁变异结构）；② 无 shift 骨架的 OT 混合（otmixm）de 44.3/mmd 53.6 尚可但总分被 vario 拖累；③ damp 变体（0.3）46.75 低于 shift 族。
 
@@ -314,7 +314,7 @@
 
 ### 实验族：kp 族（知识程序位移 + 方差放大 / 成熟度加权）
 
-技术：两机制叠加：A=知识程序位移——教科书发育程序枚举 10 程序 271 基因（印记/神经/ECM/多能/核糖体/糖酵解/应激/上皮等），对 pseudobulk 加位移（a∈{0.15,0.25,0.35} 幅度；u=平权 / w=按程序命中加权）；B=方差放大——方差最大 K=500 基因偏离 ×c=1.5（b500c15 即 K=500、c=1.5；n=2000 采样）。变体：kp2/3/4/5 为机制组合序号与消融（raw=原始输入、wo=无加权、aonly=仅 A）；kp7_m 为成熟度加权变体（m 机制 + b=0.50 成熟度指数，b=0.00 为对照）。关键设计决策：生物学知识应作"筛选程序基因集"而非逐基因位移。
+技术：两机制叠加：A=知识程序位移——教科书发育程序枚举 10 程序 271 基因（印记/神经/ECM/多能/核糖体/糖酵解/应激/上皮等；程序清单为发育生物学领域知识，无单一 URL），对 pseudobulk 加位移（a∈{0.15,0.25,0.35} 幅度；u=平权 / w=按程序命中加权）；B=方差放大——方差最大 K=500 基因偏离 ×c=1.5（b500c15 即 K=500、c=1.5；n=2000 采样）。变体：kp2/3/4/5 为机制组合序号与消融（raw=原始输入、wo=无加权、aonly=仅 A）；kp7_m 为成熟度加权变体（m 机制 + b=0.50 成熟度指数，b=0.00 为对照）。关键设计决策：生物学知识应作"筛选程序基因集"而非逐基因位移。
 
 工具：tools/_t1_kp_make.py、_t1_kp_make3.py、check_submission.py、veckit、真榜回填。
 

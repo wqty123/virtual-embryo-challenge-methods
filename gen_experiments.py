@@ -106,12 +106,12 @@ def family_of(sheet, r):
 T1_FAM = {
  'shift': ('pseudobulk shift（全局漂移）', [
     '技术：以 E9.5 细胞为载体，逐基因加全局漂移量（Δgene = mean_gene(E9.5) − mean_gene(E8.5) × damp），damp∈{0.25,0.5,1.0,1.25,1.5,2.0,2.5}；非对称变体上/下幅度取不同系数（up1.5/dn0.5、up1.5/dn0.75）；弥散探针 shift@0.5+s0.5 在漂移上叠加高斯噪声；shift@2.5 是 damp 拐点测试。实现：baselines/t1_shift.py。',
-    '工具：baselines/t1_shift.py、veckit 本地计分器、台账回填。',
+    '工具：baselines/t1_shift.py（配方参考官方基线 pseudobulk shift，https://virtualembryo.ai/challenge/baselines）、veckit 本地计分器、台账回填。',
     '遇到的问题：① variogram 全族偏低（35.7~44.5），全局平移破坏基因-基因协方差结构；② de_score 封顶 ≈45.3，全局标量猜不中"被点名的基因"；③ damp>2.5 无增益（S2.5 是拐点）；④ 非对称变体（up1.5/dn0.5、up1.5/dn0.75）比对称更差；⑤ 弥散探针 P4@0.5+s0.5 只有 42.29，噪声直接毁 vario(-19) 和 mmd。',
     '结论：shift 是最强简单基线，族峰值 shift@2.5 = 48.85（rank 142/202，de 45.3/dir 56.4/mmd 55.4/vario 34.1），超过实测地板 46.84 约 2 分；但"用 vario 换 de"到头，被后续按类型/按状态的生成超越。']),
  'otmix': ('OT 混合（WOT 耦合 + 类型转移重采样）', [
     '技术：用 WOT 在 E8.5→E9.5 上学细胞耦合矩阵，按类型转移概率重采样生成 E9.5 细胞；掩膜A（边掩膜 378→61 条边，去低质量耦合边）变体 otmixp 含生长因子π（出生-死亡过程），otmixm 无生长。实现：baselines/t1_otmix.py。',
-    '工具：baselines/t1_otmix.py、wot_analysis/（WOT 耦合矩阵与边掩膜）、veckit。',
+    '工具：baselines/t1_otmix.py、wot_analysis/（WOT 耦合矩阵与边掩膜，WOT 库 https://github.com/broadinstitute/wot）、veckit。',
     '遇到的问题：① otmixp@1.0 的 variogram 崩到 28.8（生成幅度毁变异结构）；② 无 shift 骨架的 OT 混合（otmixm）de 44.3/mmd 53.6 尚可但总分被 vario 拖累；③ damp 变体（0.3）46.75 低于 shift 族。',
     '结论：OT 混合路线失败——类型转移重采样不能替代表达层面的受控生成；族峰值 otmixp@1.0 = 47.52。']),
  'markov': ('Markov 通量（时间齐性转移规则）', [
@@ -200,7 +200,7 @@ T1_FAM = {
     '遇到的问题：47.93 低于官方地板 50；de 43.0 高于 otf3 但仍弱、vario 41.6 偏弱。',
     '结论：动力学建模方向正确但实现未过线；关闭。']),
  'kp': ('kp 族（知识程序位移 + 方差放大 / 成熟度加权）', [
-    '技术：两机制叠加：A=知识程序位移——教科书发育程序枚举 10 程序 271 基因（印记/神经/ECM/多能/核糖体/糖酵解/应激/上皮等），对 pseudobulk 加位移（a∈{0.15,0.25,0.35} 幅度；u=平权 / w=按程序命中加权）；B=方差放大——方差最大 K=500 基因偏离 ×c=1.5（b500c15 即 K=500、c=1.5；n=2000 采样）。变体：kp2/3/4/5 为机制组合序号与消融（raw=原始输入、wo=无加权、aonly=仅 A）；kp7_m 为成熟度加权变体（m 机制 + b=0.50 成熟度指数，b=0.00 为对照）。关键设计决策：生物学知识应作"筛选程序基因集"而非逐基因位移。',
+    '技术：两机制叠加：A=知识程序位移——教科书发育程序枚举 10 程序 271 基因（印记/神经/ECM/多能/核糖体/糖酵解/应激/上皮等；程序清单为发育生物学领域知识，无单一 URL），对 pseudobulk 加位移（a∈{0.15,0.25,0.35} 幅度；u=平权 / w=按程序命中加权）；B=方差放大——方差最大 K=500 基因偏离 ×c=1.5（b500c15 即 K=500、c=1.5；n=2000 采样）。变体：kp2/3/4/5 为机制组合序号与消融（raw=原始输入、wo=无加权、aonly=仅 A）；kp7_m 为成熟度加权变体（m 机制 + b=0.50 成熟度指数，b=0.00 为对照）。关键设计决策：生物学知识应作"筛选程序基因集"而非逐基因位移。',
     '工具：tools/_t1_kp_make.py、_t1_kp_make3.py、check_submission.py、veckit、真榜回填。',
     '遇到的问题：① kp 探路 kp_a015u 只有 48.88；② raw 化变体全败（kp5_kw/kp4_so/kp2_raw/kp3_w_raw 全部 47~48，vario 46.6 崩）；③ aonly_raw 去 b500c15 组件后三线全掉（47.37）；④ wo 变体 51.91 未超 w 全管线；⑤ kp7_m_b000 对照 51.37，比 b050 的 53.67 低 2.3（de -4.1/dir -3.2/mmd -1.7）——b=0.50 是关键参数；⑥ kp3_w_a025_b500c15_n2000 52.18 曾创 T1 最佳（dir/mmd/vario 三线过线）。',
     '结论：kp7_m_b050_n2000 = **53.67**（rank 93/254，de 44.2 破 42 瓶颈/dir 57.6/mmd 57.6/vario 54.7 四项新高），当前 T1 最佳。kp7 成熟度加权曾遭 500 面板 OOF 否决，但 32285 面板真榜 +2.30——小面板 OOF 结论不能外推到完整面板。']),
@@ -219,7 +219,7 @@ T3_FAM = {
  'wt': ('wt_identity（地板探针）', [
     '技术：直接把 WT 表达复制为预测（E8.75 载体 + WT 分布）。',
     '工具：baselines/t3_wt_identity.py、veckit。',
-    '遇到的问题：实测地板 45.81；与 F 同文件双传烧 1 名额。',
+    '工具：baselines/t3_wt_identity.py（wt_identity 为官方基线定义，https://virtualembryo.ai/challenge/baselines）、veckit。',
     '结论：T3 实测地板 = 45.81，官方地板刻度 = 50；一切方法先与此比较。']),
  'cardiac': ('cardiac（谱系限制 transfer）', [
     '技术：只对 cardiac 谱系细胞施加全局 Δ（谱系限制版）。',
@@ -278,7 +278,7 @@ T3_FAM = {
     '结论：prior 加权净负（β 单调递减），证伪；T3 上任何偏离纯 KO 细胞自然分布的操作都削弱 de。']),
  'prw': ('prw（官方 population_reweight + GSE 先验）', [
     '技术：prw = 官方 population_reweight 算子：对 WT 载体做 WT-vs-KO 分类器重采样（该算子原理上无法产生足够强响应）+ GSE 外部先验（s=0.10，1.2MB 小模型；GSE208162 先验与 Mab21l2 响应正交：落入 DE 集 48/267=随机期望）。',
-    '工具：tools/_gse_cells_make.py、_t3_gse_prior.py、veckit。',
+    '工具：tools/_gse_cells_make.py、_t3_gse_prior.py、veckit；GSE208162 外部先验数据（https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE208162）。',
     '遇到的问题：54.49——severity_slope 70.6 远低于 cmp 的 97.0（KO 效应未打出）；de 44.9/dir 51.3 弱；mmd 53.1/vario 51.9 分布保真做到了。',
     '结论：分布保住、效应打不出（sev 70.6 vs cmp 97.0）；外部先验方向对齐度不预测分数，关闭。']),
  'kb': ('kb（真实 WT 稀释 KO，A/B 证伪复核）', [

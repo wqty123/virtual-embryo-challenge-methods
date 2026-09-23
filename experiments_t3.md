@@ -31,7 +31,7 @@
 
 工具：baselines/t3_wt_identity.py、veckit。
 
-遇到的问题：实测地板 45.81；与 F 同文件双传烧 1 名额。
+工具：baselines/t3_wt_identity.py（wt_identity 为官方基线定义，https://virtualembryo.ai/challenge/baselines）、veckit。
 
 结论：T3 实测地板 = 45.81，官方地板刻度 = 50；一切方法先与此比较。
 
@@ -245,7 +245,7 @@
 
 技术：prw = 官方 population_reweight 算子：对 WT 载体做 WT-vs-KO 分类器重采样（该算子原理上无法产生足够强响应）+ GSE 外部先验（s=0.10，1.2MB 小模型；GSE208162 先验与 Mab21l2 响应正交：落入 DE 集 48/267=随机期望）。
 
-工具：tools/_gse_cells_make.py、_t3_gse_prior.py、veckit。
+工具：tools/_gse_cells_make.py、_t3_gse_prior.py、veckit；GSE208162 外部先验数据（https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE208162）。
 
 遇到的问题：54.49——severity_slope 70.6 远低于 cmp 的 97.0（KO 效应未打出）；de 44.9/dir 51.3 弱；mmd 53.1/vario 51.9 分布保真做到了。
 
